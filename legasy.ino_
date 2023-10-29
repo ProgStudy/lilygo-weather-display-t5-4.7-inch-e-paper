@@ -1,0 +1,304 @@
+#ifndef BOARD_HAS_PSRAM
+    #error "Please enable PSRAM !!!"
+#endif
+
+#include <EEPROM.h>
+#include <Arduino.h>
+#include "epd_driver.h"
+
+#include "fonts/osans6b.h"
+#include "fonts/osans8b.h"
+#include "fonts/osans10b.h"
+#include "fonts/osans12b.h"
+#include "fonts/osans16b.h"
+#include "fonts/osans18b.h"
+#include "fonts/osans24b.h"
+#include "fonts/osans26b.h"
+#include "fonts/osans32b.h"
+#include "fonts/osans48b.h"
+
+#include "icons/icon_wifi.h"
+#include "icons/icon_wifi_small.h"
+
+
+// #include "services/wifi.h"
+// #include "services/weather.h"
+
+
+/*
+кратко:
+    - запускается устройство
+    - пытается подключиться к wifi-сети из доступных у него в памяти, 
+попытка подключения к wifi будет до 3х раза, если не удалось, то возьмет из списка далее другую wifi точку
+    - в случае, если не получится подключиться, то переключит в режим раздачи своей сети и выведет логин+пароль,
+дополнительно сгенерирует qr-код на подключение к устройству, после подключения позволит через браузер зайти в веб-интерфейс и сделать правки, например
+добавить новую точку доступа в список или изменить данные по яндекс погоде
+    - если все же устройство смогло подключиться к wifi сети, то он будет пытаться получить данные из яндекса с последующим выводом на экране
+*/
+
+void setup()
+{
+    Serial.begin(115200);
+
+    // EEPROM.begin(4096);
+
+    char buf[128];
+
+    int cursor_x = 20;
+    int cursor_y = 35;
+
+
+    epd_init();
+
+    epd_poweron();    
+    epd_clear();
+
+    cursor_x = (960 / 2) - (14 * (26 / 2));
+    cursor_y = 540 - 35;
+
+    writeln((GFXfont *)&osans12b, (char*) "ожидаем подключения к сети", &cursor_x, &cursor_y, NULL);
+
+    Rect_t area = {
+        .x = 480 - (IconWifiSmall_width / 2),
+        .y = 150,
+        .width = IconWifiSmall_width,
+        .height = IconWifiSmall_height,
+    };
+
+    epd_draw_image(area, (uint8_t *)IconWifiSmall_data, BLACK_ON_WHITE);
+
+    cursor_y = 150 + IconWifiSmall_height + 35;
+
+    const char *string3 = "SOLNYSHKO_HIGH";
+
+    cursor_x = (960 / 2) - (20 * (strlen(string3) / 2));
+
+    writeln((GFXfont *)&osans16b, string3, &cursor_x, &cursor_y, NULL);
+    
+    runProgress();
+
+    cursor_y = 150 + IconWifiSmall_height + 35;
+    
+    Rect_t area_zone = {
+        .x = 0,
+        .y = cursor_y - 34,
+        .width = 960,
+        .height = 38,
+    };
+
+    string3 = "SOLNYSHKO_LOW";
+    cursor_x = (960 / 2) - (20 * (strlen(string3) / 2));
+
+    epd_clear_area(area_zone);
+
+    writeln((GFXfont *)&osans16b, string3, &cursor_x, &cursor_y, NULL);
+
+    runProgress();
+
+    cursor_y = 150 + IconWifiSmall_height + 35;
+    
+    area_zone = {
+        .x = 0,
+        .y = cursor_y - 34,
+        .width = 960,
+        .height = 38,
+    };
+
+    string3 = "T_TestTest_TestTest_T";
+
+    cursor_x = (960 / 2) - (20 * (strlen(string3) / 2));
+
+    epd_clear_area(area_zone);
+
+    writeln((GFXfont *)&osans16b, string3, &cursor_x, &cursor_y, NULL);
+
+    runProgress();
+
+    //----------------------------------------------------------------------------------
+
+    // for(int i = 0; i < 5; i++) {
+    //     writeln((GFXfont *)&osans12b, string1, &cursor_x, &cursor_y, NULL);
+    //     cursor_x += 10; 
+    //     delay(1000);
+    // }
+
+    // string1 = " Завершено! ";
+
+
+
+    // writeln((GFXfont *)&osans6b, string1 , &cursor_x, &cursor_y, NULL);
+    // writeln((GFXfont *)&osans8b, string1 , &cursor_x, &cursor_y, NULL);
+    // writeln((GFXfont *)&osans10b, string1 , &cursor_x, &cursor_y, NULL);
+    // writeln((GFXfont *)&osans12b, string1 , &cursor_x, &cursor_y, NULL);
+    // writeln((GFXfont *)&osans16b, string1 , &cursor_x, &cursor_y, NULL);
+    // writeln((GFXfont *)&osans18b, string1 , &cursor_x, &cursor_y, NULL);
+    // writeln((GFXfont *)&osans24b, string1 , &cursor_x, &cursor_y, NULL);
+    // writeln((GFXfont *)&osans26b, string1 , &cursor_x, &cursor_y, NULL);
+    // writeln((GFXfont *)&osans32b, string1 , &cursor_x, &cursor_y, NULL);
+    // writeln((GFXfont *)&osans48b, string1 , &cursor_x, &cursor_y, NULL);
+
+    //
+
+
+    epd_poweroff_all();
+}
+
+void runProgress()
+{
+
+    int cursor_x = 20;
+    int cursor_y = 35;
+
+    Rect_t area_zone = {
+        .x = cursor_x,
+        .y = cursor_y - 28,
+        .width = 940,
+        .height = 32,
+    };
+
+    epd_clear_area(area_zone);
+
+    const char *string2 = "[                                                                                                                                ]\n";
+    
+    writeln((GFXfont *)&osans12b, string2 , &cursor_x, &cursor_y, NULL);
+    
+    cursor_x = 20;
+    cursor_y = 35;
+
+    const char *stringS = "[";
+
+    for (int i = 0; i < 5; i++)
+    {
+        if (i == 0) {
+            stringS = "  ==========";
+        } else if (i < 4) {
+            stringS = "============";
+        } else {
+            stringS = "=================";
+        }
+
+        writeln((GFXfont *)&osans12b, stringS , &cursor_x, &cursor_y, NULL);
+
+        delay(1000);
+    }
+
+    // ================================================================= 
+    // delay(3000);
+
+    // configService.setWifiOnList(0, "SOLNYSHKO-HIGH", "9mamule8");
+    // configService.setWifiOnList(1, "SOLNYSHKO-MIDDLE", "9mamule8");
+    // configService.setWifiOnList(2, "SOLNYSHKO-LOW", "9mamule8");
+
+    // delay(3000);
+
+    // int len = configService.lengthWifiList();
+
+    // for (int i = 0; i < len; i++) {
+    //     WifiData data = configService.getWifiOfList(i);
+    //     Serial.println(data.ssid);
+    //     Serial.println(data.pass);
+    //     Serial.println(String(data.init));
+    //     Serial.println("");
+    // }
+
+
+    // ===================================================================
+
+    // EEPROM.begin(1024);
+
+    // Serial.println("init...");  
+    
+    // initDisplay();
+
+    // Config config;
+
+    // EEPROM.get(0, config);
+
+    // delay(3000);
+
+    // Serial.println("config.wifilist.0: " + String(config.wifiList[0].ssid));
+    // Serial.println("config.wifilist.1: " + String(config.wifiList[1].ssid));
+    // Serial.println("config.wifilist.2: " + String(config.wifiList[2].ssid));
+
+    // ========================================
+
+    // if (String(config.wifiList[1].ssid) == "SOLNYSHKO-LOW") {
+    //     Serial.println("stop!!!");
+    //     return;
+    // }
+
+    // delay(3000);
+
+    // config = Config();
+
+    // config.wifiList[0] = WifiDataS();
+    
+    // config.wifiList[0].ssid = "SOLNYSHKO-HIGH";
+    // config.wifiList[0].pass = "9mamule8";
+
+    // config.wifiList[1] = WifiDataS();
+    
+    // config.wifiList[1].ssid = "SOLNYSHKO-LOW";
+    // config.wifiList[1].pass = "9mamule8";
+
+    // config.wifiList[2] = WifiDataS();
+    
+    // config.wifiList[2].ssid = "GaragePurshevo";
+    // config.wifiList[2].pass = "9mamule8";
+
+    // EEPROM.put(0, config);
+    // EEPROM.commit();
+
+    // ========================================
+    
+    // wifiService.init();
+    
+    // wifiService.setWifi("SOLNYSHKO-HIGH", "9mamule8", 1);
+    // wifiService.setWifi("SOLNYSHKO-LOW", "9mamule8", 2);
+
+    // delay(3000);
+
+    // Serial.println(String(wifiService.getWifiData(0).ssid) + " | " + String(wifiService.getWifiData(0).pass));
+    // Serial.println(String(wifiService.getWifiData(1).ssid) + " | " + String(wifiService.getWifiData(1).pass));
+
+    // wifiService.nextConnect();
+
+    // int take = 0;
+
+    // while (!wifiService.statusConnect()) { // Wait for the Wi-Fi to connect
+    //     delay(1000);
+    //     Serial.print('.');
+
+    //     if (take == 10) {
+    //         break;
+    //     }
+
+    //     take++;
+    // }
+
+    // wifiService.nextConnect();
+
+    // take = 0;
+
+    // while (!wifiService.statusConnect()) { // Wait for the Wi-Fi to connect
+    //     delay(1000);
+    //     Serial.print('.');
+
+    //     if (take == 10) {
+    //         break;
+    //     }
+
+    //     take++;
+    // }
+
+    // Serial.println('\n');
+    // Serial.println("Connection established");  
+    
+    // startApp.show();
+    
+}
+
+void loop()
+{
+
+}
