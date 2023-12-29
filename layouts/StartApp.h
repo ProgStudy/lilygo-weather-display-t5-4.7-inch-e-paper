@@ -4,21 +4,9 @@ class StartAppLayout {
     public:
 
         void show(WifiService _wifiService) {
-            
             wifiService = _wifiService;
 
-            epd_clear();
-
-            setTextBottomCenter("Ищем подключение к сети...");
-
-            showWifiIcon();
-
-            if (connectWifi()) {
-                setTextBottomCenter("Соединение установлено!");
-                return;
-            }
-
-            setTextBottomCenter("Не удалось подключиться к сети", "Устройство переключилась в режим настройки!");
+            showSelectBtns();
         }
 
         void clickSwitchModeSetting() {
@@ -30,7 +18,6 @@ class StartAppLayout {
         }
         
         void update() {
-            // btn.requestLoop();
         }
 
         void click1() {
@@ -38,11 +25,17 @@ class StartAppLayout {
         }
 
         void click2() {
-            Serial.println("click 2");
+            if (isActive) {
+                isActive = false;
+                showSearchWifi();
+            }
         }
 
         void click3() {
-            Serial.println("click 3");
+            if (isActive) {
+                isActive = false;
+                showAdminWeb();
+            }
         }
     
     private: 
@@ -52,6 +45,8 @@ class StartAppLayout {
         Rect_t area_zone_text_center;
         Rect_t area_zone_text_botton_center;
         Rect_t area_zone_text_botton_center2;
+
+        bool isActive = true;
 
         WifiService wifiService;
 
@@ -91,6 +86,83 @@ class StartAppLayout {
                 
             }
 
+        }
+
+        void showAdminWeb() {
+            free(framebuffer);
+            
+            epd_poweron();
+            epd_clear();
+
+            epd_draw_grayscale_image(epd_full_screen(), framebuffer);
+            epd_poweroff();
+        }
+
+        void showSelectBtns() {
+            free(framebuffer);
+
+            epd_poweron();
+            epd_clear();
+
+            const char *overview[] = {
+                "[1] Режим поиска сети WIFI и отображение погоды\n"\
+                "[2] Режим админ панели, будет сгенерирован вход \n     в админ панель"
+            };
+
+            int top = -15;
+
+            cursor_x = 440;
+            cursor_y = 50 + top;
+
+            writeln((GFXfont *)&osans12b, "1", &cursor_x, &cursor_y, framebuffer);
+
+            cursor_x += 50;
+
+            writeln((GFXfont *)&osans12b, "2", &cursor_x, &cursor_y, framebuffer);
+
+            cursor_x = 430;
+            cursor_y = 25 + top;
+            
+            epd_draw_rect(cursor_x, cursor_y, 30, 30, 0, framebuffer);
+
+            cursor_x += 67;
+            
+            epd_draw_rect(cursor_x, cursor_y, 30, 30, 0, framebuffer);
+
+            // выводим информацию...
+
+            cursor_x = 50;
+            cursor_y = 150;
+
+            write_string((GFXfont *)&osans16b, overview[0], &cursor_x, &cursor_y, framebuffer);
+
+            // cursor_x = 50;
+            // cursor_y += 50;
+
+            // writeln((GFXfont *)&osans16b, , &cursor_x, &cursor_y, framebuffer);
+
+            epd_draw_grayscale_image(epd_full_screen(), framebuffer);
+
+            epd_poweroff();
+
+        }
+
+        void showSearchWifi() {
+            epd_poweron();
+            epd_clear();
+
+            setTextBottomCenter("Ищем подключение к сети...");
+
+            showWifiIcon();
+
+            if (connectWifi()) {
+                setTextBottomCenter("Соединение установлено!");
+                epd_poweroff();
+                return;
+            }
+
+            setTextBottomCenter("Не удалось подключиться к сети", "Устройство переключилась в режим настройки!");
+            epd_poweroff();
         }
         
         void setTextCenter(const char* text) {
