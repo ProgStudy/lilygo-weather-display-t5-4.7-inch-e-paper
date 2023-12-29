@@ -25,6 +25,14 @@ class WifiService {
             return currentWifiData;
         }
 
+        void setWifiPoint(char* ssid, char* pass) {
+            WiFi.mode(WIFI_AP);
+            WiFi.softAP(ssid, pass);
+            IPAddress Ip(192, 168, 1, 1);
+            IPAddress NMask(255, 255, 255, 0);
+            WiFi.softAPConfig(Ip, Ip, NMask);
+        }
+
         bool nextConnect() {
             if (currentWifi >= configService.lengthWifiList()) {
                 return false;

@@ -21,7 +21,10 @@ class StartAppLayout {
         }
 
         void click1() {
-            Serial.println("click 1");
+            if (isActive) {
+                isActive = false;
+                showAdminWeb();
+            }
         }
 
         void click2() {
@@ -31,12 +34,7 @@ class StartAppLayout {
             }
         }
 
-        void click3() {
-            if (isActive) {
-                isActive = false;
-                showAdminWeb();
-            }
-        }
+        void click3() {}
     
     private: 
         char buf[128];
@@ -89,17 +87,41 @@ class StartAppLayout {
         }
 
         void showAdminWeb() {
-            free(framebuffer);
-            
+            displayService.setMemBufferDisplay();
+
             epd_poweron();
             epd_clear();
 
+            showQrCodeLoginAdminWifiIcon();
+            showQrCodeLoginAdminWebpage();
+            
+            const char *overview[] = {
+                "[ WIFI ] Наведие камерой на QR код или подключитесь к WIFI сети \nSSID: lilygo-admin | Пароль: 1qwe2rty3 \n\n"\
+                "[ Admin Panel ] Наведие камерой на QR код или перейдите \nпо адресу: http://192.168.1.1"
+            };
+
+            cursor_x = 30;
+            cursor_y = 30;
+
+            write_string((GFXfont *)&osans12b, overview[0], &cursor_x, &cursor_y, framebuffer);            
+
+            cursor_x = 200;
+            cursor_y = EPD_HEIGHT - 35;
+
+            write_string((GFXfont *)&osans18b, "WIFI", &cursor_x, &cursor_y, framebuffer);
+
+            cursor_y = EPD_HEIGHT - 35;
+            cursor_x = EPD_WIDTH - 100 - 300 + 30;
+
+            write_string((GFXfont *)&osans18b, "Admin Panel", &cursor_x, &cursor_y, framebuffer);
+
             epd_draw_grayscale_image(epd_full_screen(), framebuffer);
+            
             epd_poweroff();
         }
 
         void showSelectBtns() {
-            free(framebuffer);
+            displayService.setMemBufferDisplay();
 
             epd_poweron();
             epd_clear();
@@ -135,11 +157,6 @@ class StartAppLayout {
             cursor_y = 150;
 
             write_string((GFXfont *)&osans16b, overview[0], &cursor_x, &cursor_y, framebuffer);
-
-            // cursor_x = 50;
-            // cursor_y += 50;
-
-            // writeln((GFXfont *)&osans16b, , &cursor_x, &cursor_y, framebuffer);
 
             epd_draw_grayscale_image(epd_full_screen(), framebuffer);
 
@@ -192,6 +209,30 @@ class StartAppLayout {
             };
 
             epd_draw_image(area, (uint8_t *)IconWifiSmall_data, BLACK_ON_WHITE);
+        }
+
+        void showQrCodeLoginAdminWifiIcon() {
+            Rect_t area = {
+                .x = 100,
+                .y = 200,
+                .width = QrCodeLoginAdminWifi_width,
+                .height = QrCodeLoginAdminWifi_height,
+            };
+
+            this->wifiService.setWifiPoint("lilygo-admin", "1qwe2rty3");
+
+            epd_draw_image(area, (uint8_t *)QrCodeLoginAdminWifi_data, BLACK_ON_WHITE);
+        }
+
+        void showQrCodeLoginAdminWebpage() {
+            Rect_t area = {
+                .x = EPD_WIDTH - 300 - 100,
+                .y = 200,
+                .width = QrCodeLoginWebpage_width,
+                .height = QrCodeLoginWebpage_height,
+            };
+
+            epd_draw_image(area, (uint8_t *)QrCodeLoginWebpage_data, BLACK_ON_WHITE);
         }
 
         String stringS = "[";

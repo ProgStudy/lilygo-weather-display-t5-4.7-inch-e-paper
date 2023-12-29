@@ -14,3 +14,6 @@
 
 Команда для компиляции прошивки:
 >arduino-cli compile --fqbn esp32:esp32:esp32:JTAGAdapter=default,PSRAM=enabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,LoopCore=1,EventsCore=1,DebugLevel=none,EraseFlash=none .\lilygo-weather-display-4-7.ino --output-dir ./firmware
+
+Команда для конвертации изображений в формат uint8:
+>python converter.py -i image.PNG -n image -o image.h

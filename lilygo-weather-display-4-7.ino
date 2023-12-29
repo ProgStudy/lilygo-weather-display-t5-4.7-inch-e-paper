@@ -20,15 +20,22 @@ int cursor_y = 0;
 #include "fonts/osans26b.h"
 #include "fonts/osans32b.h"
 #include "fonts/osans48b.h"
-#include "icons/icon_wifi_small.h"
 #include "fonts/osans12b.h"
 #include "fonts/osans16b.h"
+
+#include "icons/icon_wifi_small.h"
+#include "icons/qr_code_login_admin_wifi.h"
+#include "icons/qr_code_login_webpage.h"
 
 // load services
 #include "services/ConfigService.h"
 ConfigService configService = ConfigService();
 #include "services/WifiService.h"
 WifiService wifiService = WifiService();
+#include "services/DisplayService.h"
+DisplayService displayService = DisplayService();
+
+
 #include "services/Button.h"
 
 // load layouts
@@ -92,12 +99,5 @@ void loop()
 
 void initDisplay() {
     epd_init();
-    
-    framebuffer = (uint8_t *)ps_calloc(sizeof(uint8_t), EPD_WIDTH * EPD_HEIGHT / 2);
-    
-    if (!framebuffer) {
-        Serial.println("alloc memory failed !!!");
-        while (1);
-    }
-    memset(framebuffer, 0xFF, EPD_WIDTH * EPD_HEIGHT / 2);
+    displayService.setMemBufferDisplay();
 }
