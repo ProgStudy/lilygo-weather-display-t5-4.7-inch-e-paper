@@ -27,10 +27,11 @@ class WifiService {
 
         void setWifiPoint(char* ssid, char* pass) {
             WiFi.mode(WIFI_AP);
+            IPAddress local_ip(192,168,1,1);
+            IPAddress gateway(192,168,1,1);
+            IPAddress subnet(255,255,255,0);
             WiFi.softAP(ssid, pass);
-            IPAddress Ip(192, 168, 1, 1);
-            IPAddress NMask(255, 255, 255, 0);
-            WiFi.softAPConfig(Ip, Ip, NMask);
+            WiFi.softAPConfig(local_ip, gateway, subnet);
         }
 
         bool nextConnect() {

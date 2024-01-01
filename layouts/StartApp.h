@@ -4,17 +4,9 @@ class StartAppLayout {
     public:
 
         void show(WifiService _wifiService) {
-            wifiService = _wifiService;
+            wifiService      = _wifiService;
 
             showSelectBtns();
-        }
-
-        void clickSwitchModeSetting() {
-            //отключает режим настройки и начинает искать сеть
-        }
-
-        void clickSwitchModeWifi() {
-            //останавливает поиск и переключает в режим настройки
         }
         
         void update() {
@@ -31,6 +23,7 @@ class StartAppLayout {
             if (isActive) {
                 isActive = false;
                 showSearchWifi();
+                webServerService.init();
             }
         }
 
@@ -180,6 +173,9 @@ class StartAppLayout {
 
             setTextBottomCenter("Не удалось подключиться к сети", "Устройство переключилась в режим настройки!");
             epd_poweroff();
+
+            delay(3000);
+            showAdminWeb();
         }
         
         void setTextCenter(const char* text) {
@@ -220,6 +216,8 @@ class StartAppLayout {
             };
 
             this->wifiService.setWifiPoint("lilygo-admin", "1qwe2rty3");
+            
+            webServerService.init();
 
             epd_draw_image(area, (uint8_t *)QrCodeLoginAdminWifi_data, BLACK_ON_WHITE);
         }

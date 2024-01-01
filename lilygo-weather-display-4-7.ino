@@ -22,6 +22,7 @@ int cursor_y = 0;
 #include "fonts/osans48b.h"
 #include "fonts/osans12b.h"
 #include "fonts/osans16b.h"
+#include "web/index.h"
 
 #include "icons/icon_wifi_small.h"
 #include "icons/qr_code_login_admin_wifi.h"
@@ -34,7 +35,8 @@ ConfigService configService = ConfigService();
 WifiService wifiService = WifiService();
 #include "services/DisplayService.h"
 DisplayService displayService = DisplayService();
-
+#include "services/WebServerService.h"
+WebServerService webServerService = WebServerService();
 
 #include "services/Button.h"
 
@@ -60,8 +62,8 @@ void setup()
     wifiService.init(configService);
 
     setSwitchClickCall(START_APP);
-    startApp.show(wifiService);
 
+    startApp.show(wifiService);
 }
 
 void setSwitchClickCall(uint8_t typePage) {
@@ -95,6 +97,7 @@ void loop()
     btn1.requestLoop();
     btn2.requestLoop();
     btn3.requestLoop();
+    webServerService.loop();
 }
 
 void initDisplay() {
