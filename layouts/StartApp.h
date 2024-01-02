@@ -1,3 +1,6 @@
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+
 #define START_APP (1)
 
 class StartAppLayout {
@@ -40,6 +43,77 @@ class StartAppLayout {
         bool isActive = true;
 
         WifiService wifiService;
+
+        void runActualityRegionList() {
+            epd_poweron();
+
+            if (!requestRemoteListRegions()) {
+                setTextBottomCenter("Не удалось получить список регионов", "Используем старый список!");
+                delay(3000);
+            } else {
+                setTextBottomCenter("Регионы актуализированы!");
+            }
+
+            epd_poweroff();
+        }
+
+        bool requestRemoteListRegions() {
+            linkRemoteRegins _linkRemote = configService.getUrlRemoteRegions();
+            HTTPClient _http;
+            String _host = _linkRemote.host;
+            WiFiClient _client;
+            _client.stop();
+
+            _http.begin(_client, _host, _linkRemote.port, _linkRemote.path, true);
+
+            int _httpCode = _http.GET();
+
+            if (_httpCode == HTTP_CODE_OK)
+            {
+                int _size = _client.available();
+                char _data[_size];
+                
+                bool isResult = false;
+
+                _http.getStream().readBytes(_data, _size);
+                
+                isResult = saveFreshRegions(_data, _size);
+
+                _client.stop();
+                _http.end();
+
+                return isResult;
+            }
+
+            return false;
+        }
+
+        bool saveFreshRegions(char *jsonStr, int size)
+        {
+            DynamicJsonDocument jsonDoc(1024);                              // allocate the JsonDocument
+            DeserializationError error = deserializeJson(jsonDoc, jsonStr); // Deserialize the JSON document
+            if (error)
+            { // Test if parsing succeeds.
+                Serial.println("deserializeJson() failed: " + String(error.c_str()));
+                return false;
+            }
+            // convert it to a JsonObject
+            JsonObject jo = jsonDoc.as<JsonObject>();
+
+            int index = 0;
+
+            for (JsonObject item : jo["regions"].as<JsonArray>()) {
+                Serial.println(String((const char*) item["name"]));
+                configService.setRegionOnList(index, item["name"], (float) item["lat"], (float) item["lon"], (bool) item["isActive"]);
+                index++;
+            }
+
+            configService.saveConfig();
+
+            jsonDoc.clear();
+
+            return true;
+        }
 
         void setTextBottomCenter(char* text, char* text2 = nullptr) {
             if (&area_zone_text_botton_center != nullptr) {
@@ -166,8 +240,10 @@ class StartAppLayout {
             showWifiIcon();
 
             if (connectWifi()) {
-                setTextBottomCenter("Соединение установлено!");
+                setTextBottomCenter("Соединение установлено!", "Актуализируем список регионов...");
                 epd_poweroff();
+
+                runActualityRegionList();
                 return;
             }
 

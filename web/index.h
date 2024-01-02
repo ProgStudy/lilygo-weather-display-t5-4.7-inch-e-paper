@@ -86,17 +86,32 @@ const char *HTML_CONTENT_HOME = R"=====(
             </div>
             <div class="pure-g" id="meteostation" style="display: none;">
                 <div class="pure-u-24-24 pw-30">
-                    <h2 style="text-align: center;">Настройка метеостанции</h2>
+                    <form class="pure-form pure-form-stacked" onsubmit="saveRemoteLinkRegions(this);return false;">
+                            <h2 style="text-align: center;">Настройка метеостанции</h2>
+                            <fieldset>
+                                <label for="stacked-email">Хост</label>
+                                <input name="host" id="remote-link-regions-host" class="w-100" type="text" placeholder="8.8.8.8 or test.tt" />
+                                <label for="stacked-email">Порт</label>
+                                <input name="port" id="remote-link-regions-port" class="w-100" type="text" placeholder="80" />
+                                <label for="stacked-email">Путь</label>
+                                <input name="path" id="remote-link-regions-path" class="w-100" type="text" placeholder="path/to/folder" />
+                            </fieldset>
+                            <button type="submit" class="pure-button pure-button-primary w-100 pure-button-middle">Сохранить</button>
+                    </form>
+                    <hr>
+                    <form class="pure-form pure-form-stacked" onsubmit="saveApiKey(this);return false;">
+                        <fieldset>
+                            <label for="stacked-email">Яндекс API ключ</label>
+                            <input name="apiKey" id="yandex-api-key" class="w-100" type="text" placeholder="####-####-####-####" />
+                        </fieldset>
+                        <button type="submit" class="pure-button pure-button-primary w-100 pure-button-middle">Сохранить</button>
+                    </form>
                     <button class="pure-button  button-error w-100 " onclick="openPage('main')">Назад</button>
+                    </div>
                 </div>
-            </div>
         </main>
     </body>
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            
-        });
-
         function openPage(page) {
             if (["wifi", "meteostation"].includes(page)) {
                 document.getElementById('main').style.display = "none";
@@ -123,17 +138,49 @@ const char *HTML_CONTENT_HOME = R"=====(
                     })
                     .catch(() => {
                         document.getElementById('wifi').style.opacity = '1';
-                        alert('Ошибка при выгрузки настроек!');
+                        alert('Ошибка при загрузки настроек!');
+                    });
+            }
+
+            if (page == 'meteostation') {
+                document.getElementById('meteostation').style.opacity = '0.5';
+                fetch('/yandexApiKey/load')
+                    .then((response) => response.json())
+                    .then((data) => {
+                        document.getElementById('meteostation').style.opacity = '1';
+                        if (data != null) {
+                            document.getElementById('yandex-api-key').value = data.apiKey;
+                        }
+                        
+                        document.getElementById('meteostation').style.opacity = '0.5';
+                        fetch('/remote-regions/load')
+                            .then((response) => response.json())
+                            .then((data) => {
+                                document.getElementById('meteostation').style.opacity = '1';
+                                if (data != null) {
+                                    document.getElementById('remote-link-regions-host').value = data.host;
+                                    document.getElementById('remote-link-regions-port').value = data.port;
+                                    document.getElementById('remote-link-regions-path').value = data.path;
+                                }
+                            })
+                            .catch(() => {
+                                document.getElementById('meteostation').style.opacity = '1';
+                                alert('Ошибка при загрузки настроек!');
+                            });
+                    })
+                    .catch(() => {
+                        document.getElementById('meteostation').style.opacity = '1';
+                        alert('Ошибка при загрузки настроек!');
                     });
             }
         }
 
         function reboot() {
-            document.getElementById('wifi').style.opacity = '0.5';
+            document.getElementById('main').style.opacity = '0.5';
             fetch('/reboot')
                 .then((response) => response.json())
                 .then((data) => {
-                    document.getElementById('wifi').style.opacity = '1';
+                    document.getElementById('main').style.opacity = '1';
                     if (data != null) {
                         alert('Перезагрузка устройства пошла!');
                         return;
@@ -142,8 +189,48 @@ const char *HTML_CONTENT_HOME = R"=====(
                     alert('Ошибка , перезагрузите вручную!');
                 })
                 .catch(() => {
-                    document.getElementById('wifi').style.opacity = '1';
+                    document.getElementById('main').style.opacity = '1';
                     alert('Ошибка , перезагрузите вручную!');
+                });
+        }
+
+        function saveApiKey(e) {
+            let params = new URLSearchParams(new FormData(e)).toString();
+            document.getElementById('meteostation').style.opacity = '0.5';
+            fetch(`/yandexApiKey/save?${params}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    document.getElementById('meteostation').style.opacity = '1';
+                    if (data != null) {
+                        alert('Yandex API key сохранен!');
+                        return;
+                    }
+
+                    alert('Ошибка при сохранение Yandex API key!');
+                })
+                .catch(() => {
+                    document.getElementById('meteostation').style.opacity = '1';
+                    alert('Ошибка при сохранение Yandex API key!');
+                });
+        }
+
+        function saveRemoteLinkRegions(e) {
+            let params = new URLSearchParams(new FormData(e)).toString();
+            document.getElementById('meteostation').style.opacity = '0.5';
+            fetch(`/remote-regions/save?${params}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    document.getElementById('meteostation').style.opacity = '1';
+                    if (data != null) {
+                        alert('Параметры список регионов сохранен!');
+                        return;
+                    }
+
+                    alert('Ошибка при сохранение параметров список регионов!');
+                })
+                .catch(() => {
+                    document.getElementById('meteostation').style.opacity = '1';
+                    alert('Ошибка при сохранение параметров список регионов!');
                 });
         }
 

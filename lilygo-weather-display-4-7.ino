@@ -24,9 +24,14 @@ int cursor_y = 0;
 #include "fonts/osans16b.h"
 #include "web/index.h"
 
+
 #include "icons/icon_wifi_small.h"
 #include "icons/qr_code_login_admin_wifi.h"
 #include "icons/qr_code_login_webpage.h"
+
+// load requests data
+#include "request_data/weather_yandex_data.h"
+#include "request_data/remote_list_region.h"
 
 // load services
 #include "services/ConfigService.h"
@@ -42,6 +47,7 @@ WebServerService webServerService = WebServerService();
 
 // load layouts
 #include "layouts/StartApp.h"
+#include "layouts/WeatherViewApp.h"
 
 Button btn1 = Button(BUTTON_1);
 Button btn2 = Button(BUTTON_2);
@@ -49,6 +55,7 @@ Button btn3 = Button(BUTTON_3);
 
 
 StartAppLayout startApp;
+WeatherViewAppLayout weatherViewApp;
 
 
 void setup()

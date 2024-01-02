@@ -39,7 +39,45 @@ class WebServerService {
             }
 
             _server->send(200, F("application/json"), F("{}"));
+        }
+
+        void static handle_SaveYandexAPIKey() {
+            configService.setYandexApiKey(_server->arg("apiKey"));
+            _server->send(200, F("application/json"), F("{}"));
         }   
+
+        void static handle_GetYandexAPIKey() {
+            JsonObject obj = _doc.to<JsonObject>();
+            obj["apiKey"] = configService.getYandexApiKey();
+
+            String result = "";
+            serializeJson(_doc, result);
+
+            _server->send(200, F("application/json"), result);
+
+            _doc.clear();
+        }   
+
+        void static handle_LoadRemoteUrlListRegion() {
+            JsonObject obj = _doc.to<JsonObject>();
+            linkRemoteRegins _linkRemoteRegions = configService.getUrlRemoteRegions();
+
+            obj["host"] = _linkRemoteRegions.host;
+            obj["port"] = _linkRemoteRegions.port;
+            obj["path"] = _linkRemoteRegions.path;
+
+            String result = "";
+            serializeJson(_doc, result);
+
+            _server->send(200, F("application/json"), result);
+
+            _doc.clear();
+        }
+
+        void static handle_SaveRemoteUrlListRegion() {
+            configService.setRemoteUrlListRegions(_server->arg("host"), _server->arg("port").toInt(), _server->arg("path"));
+            _server->send(200, F("application/json"), F("{}"));
+        }
 
         void static handle_GetListWifi() {
 
@@ -71,6 +109,12 @@ class WebServerService {
 
             _server->on(F("/wifi/list"), WebServerService::handle_GetListWifi);
             _server->on(F("/wifi/save"), WebServerService::handle_SaveWifi);
+
+            _server->on(F("/yandexApiKey/load"), WebServerService::handle_GetYandexAPIKey);
+            _server->on(F("/yandexApiKey/save"), WebServerService::handle_SaveYandexAPIKey);
+
+            _server->on(F("/remote-regions/load"), WebServerService::handle_LoadRemoteUrlListRegion);
+            _server->on(F("/remote-regions/save"), WebServerService::handle_SaveRemoteUrlListRegion);
 
             _server->onNotFound(WebServerService::handle_NotFound);
         }
