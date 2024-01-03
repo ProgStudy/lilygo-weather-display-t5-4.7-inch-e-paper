@@ -46,6 +46,8 @@ GFXfont currentFont;
 
 const char *ntpServer = "0.europe.pool.ntp.org";
 
+uint8_t currentHour = 0, currentMin = 0, currentSec = 0, eventCnt = 0;
+
 weather_yandex_t weatherYandex;
 
 enum alignment
@@ -64,6 +66,8 @@ enum icon_size
 class WeatherViewAppLayout {
     public:
         void show() {
+            
+            setup_time();
 
             if (requestWeatherByLatLon(55.755376, 37.619595)) {
                 Serial.println("Successful yandex data!");
@@ -91,7 +95,6 @@ class WeatherViewAppLayout {
     private:
         bool isActive = true;
         bool requestWeatherByLatLon(float lat, float lon) {
-            Serial.println("[APP] Free memory: " + String(esp_get_free_heap_size()) + " bytes");
             HTTPClient _http;
             String _host = "192.168.88.128";
             String _uri = "/yandex-api-weather?lat=" + String(lat, 6) + "&lon=" + String(lon, 6);
@@ -108,7 +111,7 @@ class WeatherViewAppLayout {
 
                 String _data = _http.getString();
 
-                bool isResult = yandexJsonDecode(_data, _size);
+                bool isResult = yandexJsonDecode(_data, _data.length());
 
                 _client.stop();
                 _http.end();
@@ -123,10 +126,9 @@ class WeatherViewAppLayout {
 
         bool yandexJsonDecode(String jsonStr, int size)
         {
-            DynamicJsonDocument jsonDoc(1024);
-            Serial.println("[APP] Free memory: " + String(esp_get_free_heap_size()) + " bytes");
+            DynamicJsonDocument jsonDoc(1440);
             DeserializationError error = deserializeJson(jsonDoc, jsonStr); // Deserialize the JSON document
-            Serial.println("[APP] Free memory: " + String(esp_get_free_heap_size()) + " bytes");
+            
             if (error)
             { // Test if parsing succeeds.
                 Serial.println("deserializeJson() failed: " + String(error.c_str()));
@@ -142,6 +144,7 @@ class WeatherViewAppLayout {
             weatherYandex.fact.pressure_mm = (const uint16_t) jo["fact"]["pressure_mm"];
             weatherYandex.fact.season = (const char*) jo["fact"]["season"];
             weatherYandex.fact.temp = (const int8_t) jo["fact"]["temp"];
+            weatherYandex.fact.wind_dir = (const float) jo["fact"]["wind_dir"];
             weatherYandex.fact.wind_gust = (const float) jo["fact"]["wind_gust"];
             weatherYandex.fact.wind_speed = (const float) jo["fact"]["wind_speed"];
 
@@ -149,11 +152,18 @@ class WeatherViewAppLayout {
 
             for (uint8_t i = 0; i < 2; i++)
             {
+                weatherYandex.forecast.parts[i].condition = String((const char*) jo["forecasts"]["parts"][i]["condition"]);
+                weatherYandex.forecast.parts[i].condition = String((const char*) jo["forecasts"]["parts"][i]["condition"]);
                 weatherYandex.forecast.parts[i].icon = String((const char*) jo["forecasts"]["parts"][i]["icon"]);
                 weatherYandex.forecast.parts[i].part_name = String((const char*) jo["forecasts"]["parts"][i]["part_name"]);
                 weatherYandex.forecast.parts[i].wind_dir = String((const char*) jo["forecasts"]["parts"][i]["wind_dir"]);
                 weatherYandex.forecast.parts[i].wind_gust = (const float) jo["forecasts"]["parts"][i]["wind_gust"];
                 weatherYandex.forecast.parts[i].wind_speed = (const float) jo["forecasts"]["parts"][i]["wind_speed"];
+                weatherYandex.forecast.parts[i].feels_like = (const int) jo["forecasts"]["parts"][i]["feels_like"];
+                weatherYandex.forecast.parts[i].pressure_mm = (const int) jo["forecasts"]["parts"][i]["pressure_mm"];
+                weatherYandex.forecast.parts[i].temp_avg = (const int) jo["forecasts"]["parts"][i]["temp_avg"];
+                weatherYandex.forecast.parts[i].prec_mm = (const float) jo["forecasts"]["parts"][i]["prec_mm"];
+                weatherYandex.forecast.parts[i].prec_prob = (const int) jo["forecasts"]["parts"][i]["prec_prob"];
             }
             weatherYandex.forecast.sunrise = (const char*) jo["forecasts"]["sunrise"];
             weatherYandex.forecast.sunset = (const char*) jo["forecasts"]["sunset"];
@@ -210,17 +220,17 @@ class WeatherViewAppLayout {
             setFont(osans24b);
             int sw = drawString(x - xOffset, y, String(weatherYandex.fact.humidity) + "%", RIGHT);
 
-            uint8_t *data = load_file("blob.bin");
-            if (data != NULL)
-            {
-                Rect_t area = {
-                    .x = x - xOffset - sw - 40,
-                    .y = y,
-                    .width = 36,
-                    .height = 40};
-                epd_draw_grayscale_image(area, (uint8_t *)data);
-                free(data);
-            }
+            // uint8_t *data = load_file("blob.bin");
+            // if (data != NULL)
+            // {
+            //     Rect_t area = {
+            //         .x = x - xOffset - sw - 40,
+            //         .y = y,
+            //         .width = 36,
+            //         .height = 40};
+            //     epd_draw_grayscale_image(area, (uint8_t *)data);
+            //     free(data);
+            // }
 
             int ex;
             ex = drawString(x + xOffset, y, String(weatherYandex.fact.pressure_mm), LEFT) + 5;
@@ -242,16 +252,40 @@ class WeatherViewAppLayout {
             return output;
         }
 
+        bool setup_time()
+        {
+            configTime((3 * 3600), 0, ntpServer, "time.nist.gov");
+            delay(100);
+            return update_local_time();
+        }
+
+        bool update_local_time()
+        {
+            struct tm timeinfo;
+            char time_output[30], day_output[30], update_time[30];
+            while (!getLocalTime(&timeinfo, 5000))
+            { // Wait for 5-sec for time to synchronise
+                log_i("Failed to obtain time");
+                return false;
+            }
+            currentHour = timeinfo.tm_hour;
+            currentMin = timeinfo.tm_min;
+            currentSec = timeinfo.tm_sec;
+            sprintf(day_output, "%s, %02u %s %04u", weekday_D[timeinfo.tm_wday], timeinfo.tm_mday, month_M[timeinfo.tm_mon], (timeinfo.tm_year) + 1900);
+            strftime(update_time, sizeof(update_time), "%H:%M:%S", &timeinfo); // Creates: '@ 14:05:49'   and change from 30 to 8 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            sprintf(time_output, "%s", update_time);
+            return true;
+        }
+
         void draw_conditions_section(int x, int y, String IconName, uint8_t forecast_part, bool IconSize)
         {
             String fileName = "";
             fileName += IconName + ((IconSize == LargeIcon) ? ("L") : (""));
             fileName += ".bin";
-            Serial.println("icon name: " + IconName + " | file name: " + fileName);
+
             uint8_t *data = load_file(fileName);
             if (data != NULL)
             {
-                Serial.println("Yes data image: " + fileName);
                 Rect_t area = {
                     .x = x,
                     .y = y,

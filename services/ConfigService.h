@@ -152,8 +152,9 @@ class ConfigService {
 
             _client.stop();
 
+            _x += 2;
+            writeln((GFXfont *) &osans8b, "+", &_x, &_y, NULL);
 
-            // if (!f) {
             _http.begin(_client, _host, config._linkRemoteRegins.port, pathName, true);
             int _httpCode = _http.GET();
 
@@ -161,24 +162,30 @@ class ConfigService {
             if (_httpCode > 0) {
                 if (_httpCode == HTTP_CODE_OK) {
                     
-                    int _size = _client.available();
+                    // int _size = _client.available();
 
+                    // uint8_t *_data;
+                    // _data = (uint8_t *)ps_calloc(sizeof(uint8_t), _size);
+                    // _client.readBytes(_data, _size);
+                    // f.write(_data, _size);
+                    // f.close();
+                    // free(_data);
+
+                    //-------------------------------
+
+                    int _size = _http.getSize();
+                    String ss = _http.getString();
                     uint8_t *_data;
                     _data = (uint8_t *)ps_calloc(sizeof(uint8_t), _size);
-                    _client.readBytes(_data, _size);
+                    ss.getBytes(_data, _size);
                     f.write(_data, _size);
                     f.close();
                     free(_data);
-                    
-                    _x += 5;
-                    writeln((GFXfont *) &osans8b, "+", &_x, &_y, NULL);
-
                 }
             } else {
                 Serial.printf("[HTTP] GET... failed, error: %s\n", _http.errorToString(_httpCode).c_str());
             }
-                
-            // }
+            
             _http.end();
         }
 

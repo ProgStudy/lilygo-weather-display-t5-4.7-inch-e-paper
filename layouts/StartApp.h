@@ -62,7 +62,7 @@ class StartAppLayout {
             if (!requestRemoteListRegions()) {
                 setTextBottomCenter("Не удалось получить список регионов", "Используем старый список!");
             } else {
-                setTextBottomCenter("Регионы актуализированы!", "Сверка ресурсов...");
+                setTextBottomCenter("Регионы актуализированы!", "Подгрузка ресурсов...");
                 configService.downloadResources();
             }
 
@@ -106,7 +106,7 @@ class StartAppLayout {
 
         bool saveFreshRegions(char *jsonStr, int size)
         {
-            DynamicJsonDocument jsonDoc(1024);                              // allocate the JsonDocument
+            DynamicJsonDocument jsonDoc(1440);                              // allocate the JsonDocument
             DeserializationError error = deserializeJson(jsonDoc, jsonStr); // Deserialize the JSON document
             if (error)
             { // Test if parsing succeeds.
