@@ -12,7 +12,14 @@
         "deque": "cpp",
         "string": "cpp",
         "unordered_map": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "cmath": "cpp",
+        "memory_resource": "cpp",
+        "functional": "cpp",
+        "random": "cpp",
+        "fstream": "cpp",
+        "sstream": "cpp",
+        "tuple": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

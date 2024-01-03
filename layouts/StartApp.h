@@ -1,14 +1,15 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-#define START_APP (1)
+#include "WeatherViewApp.h"
+
+#define WEATHER_VIEW_APP (2)
 
 class StartAppLayout {
     public:
 
         void show(WifiService _wifiService) {
-            wifiService      = _wifiService;
-
+            wifiService          = _wifiService;
             showSelectBtns();
         }
         
@@ -19,6 +20,8 @@ class StartAppLayout {
             if (isActive) {
                 isActive = false;
                 showAdminWeb();
+            } else {
+                __weatherViewAppLayout.click1();
             }
         }
 
@@ -27,10 +30,18 @@ class StartAppLayout {
                 isActive = false;
                 showSearchWifi();
                 webServerService.init();
+            } else {
+                __weatherViewAppLayout.click2();
             }
         }
 
-        void click3() {}
+        void click3() {
+            __weatherViewAppLayout.click3();
+        }
+
+        void dismissOnClick() {
+            isActive = false;
+        }
     
     private: 
         char buf[128];
@@ -43,18 +54,23 @@ class StartAppLayout {
         bool isActive = true;
 
         WifiService wifiService;
+        WeatherViewAppLayout __weatherViewAppLayout;
 
         void runActualityRegionList() {
             epd_poweron();
 
             if (!requestRemoteListRegions()) {
                 setTextBottomCenter("Не удалось получить список регионов", "Используем старый список!");
-                delay(3000);
             } else {
-                setTextBottomCenter("Регионы актуализированы!");
+                setTextBottomCenter("Регионы актуализированы!", "Сверка ресурсов...");
+                configService.downloadResources();
             }
 
+            epd_clear();
             epd_poweroff();
+
+            // open weather view app
+            __weatherViewAppLayout.show();
         }
 
         bool requestRemoteListRegions() {
@@ -247,11 +263,11 @@ class StartAppLayout {
                 return;
             }
 
-            setTextBottomCenter("Не удалось подключиться к сети", "Устройство переключилась в режим настройки!");
+            setTextBottomCenter("Не удалось подключиться к сети", "Устройство перезагружается...");
             epd_poweroff();
 
             delay(3000);
-            showAdminWeb();
+            ESP.restart();
         }
         
         void setTextCenter(const char* text) {

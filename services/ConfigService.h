@@ -1,7 +1,72 @@
 #include <SPIFFS.h>
 #include <ArduinoJson.h>
+#include <HTTPClient.h>
 
 const char* pathConfig = "/config_v4.json";
+
+int _x = 10;
+int _y = 50;
+
+const String resources[] PROGMEM = {
+    "/resources/bkn_-ra_d.bin",
+    "/resources/bkn_-ra_dL.bin",
+    "/resources/bkn_-ra_n.bin",
+    "/resources/bkn_-ra_nL.bin",
+    "/resources/bkn_-sn_d.bin",
+    "/resources/bkn_-sn_dL.bin",
+    "/resources/bkn_-sn_n.bin",
+    "/resources/bkn_-sn_nL.bin",
+    "/resources/bkn_+ra_d.bin",
+    "/resources/bkn_+ra_dL.bin",
+    "/resources/bkn_+ra_n.bin",
+    "/resources/bkn_+ra_nL.bin",
+    "/resources/bkn_d.bin",
+    "/resources/bkn_dL.bin",
+    "/resources/bkn_n.bin",
+    "/resources/bkn_nL.bin",
+    "/resources/bkn_ra_d.bin",
+    "/resources/bkn_ra_dL.bin",
+    "/resources/bkn_ra_n.bin",
+    "/resources/bkn_ra_nL.bin",
+    "/resources/bkn_sn_d.bin",
+    "/resources/bkn_sn_dL.bin",
+    "/resources/bkn_sn_n.bin",
+    "/resources/bkn_sn_nL.bin",
+    "/resources/bl.bin",
+    "/resources/blL.bin",
+    "/resources/blob.bin",
+    "/resources/fg_d.bin",
+    "/resources/fg_dL.bin",
+    "/resources/moon_new.bin",
+    "/resources/ovc_-ra.bin",
+    "/resources/ovc_-raL.bin",
+    "/resources/ovc_-sn.bin",
+    "/resources/ovc_-snL.bin",
+    "/resources/ovc_+ra.bin",
+    "/resources/ovc_+raL.bin",
+    "/resources/ovc_+sn.bin",
+    "/resources/ovc_+snL.bin",
+    "/resources/ovc_ra_sn.bin",
+    "/resources/ovc_ra_snL.bin",
+    "/resources/ovc_ra.bin",
+    "/resources/ovc_raL.bin",
+    "/resources/ovc_sn.bin",
+    "/resources/ovc_snL.bin",
+    "/resources/ovc_ts_ra.bin",
+    "/resources/ovc_ts_raL.bin",
+    "/resources/ovc_ts.bin",
+    "/resources/ovc_tsL.bin",
+    "/resources/ovc.bin",
+    "/resources/ovcL.bin",
+    "/resources/skc_d.bin",
+    "/resources/skc_dL.bin",
+    "/resources/skc_n.bin",
+    "/resources/skc_nL.bin",
+    "/resources/sunrise.bin",
+    "/resources/sunset.bin",
+    "/resources/url_img.bin",
+    "/resources/wifi_img.bin"
+};
 
 const int SIZE_LIST_WIFI    = 3;
 const int SIZE_LIST_REGIONS = 5;
@@ -69,6 +134,52 @@ class ConfigService {
                 saveConfig();
             }
 
+        }
+
+        void downloadResources() {
+            for (String path : resources) {
+                Serial.println("Downloading file...: " + path);
+                downloadFile(path);
+                Serial.println("Downloaded file: " + path);
+            }
+        }
+
+        void downloadFile(String pathName) {
+            File f = SPIFFS.open(pathName, FILE_WRITE);
+            HTTPClient _http;
+            String _host = config._linkRemoteRegins.host;
+            WiFiClient _client;
+
+            _client.stop();
+
+
+            // if (!f) {
+            _http.begin(_client, _host, config._linkRemoteRegins.port, pathName, true);
+            int _httpCode = _http.GET();
+
+
+            if (_httpCode > 0) {
+                if (_httpCode == HTTP_CODE_OK) {
+                    
+                    int _size = _client.available();
+
+                    uint8_t *_data;
+                    _data = (uint8_t *)ps_calloc(sizeof(uint8_t), _size);
+                    _client.readBytes(_data, _size);
+                    f.write(_data, _size);
+                    f.close();
+                    free(_data);
+                    
+                    _x += 5;
+                    writeln((GFXfont *) &osans8b, "+", &_x, &_y, NULL);
+
+                }
+            } else {
+                Serial.printf("[HTTP] GET... failed, error: %s\n", _http.errorToString(_httpCode).c_str());
+            }
+                
+            // }
+            _http.end();
         }
 
         WifiData getWifiOfList(int index) {

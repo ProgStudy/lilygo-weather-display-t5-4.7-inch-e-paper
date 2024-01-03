@@ -6,6 +6,8 @@
 #include <EEPROM.h>
 #include "epd_driver.h"
 
+#define START_APP (1)
+
 uint8_t *framebuffer;
 
 int cursor_x = 0;
@@ -47,7 +49,7 @@ WebServerService webServerService = WebServerService();
 
 // load layouts
 #include "layouts/StartApp.h"
-#include "layouts/WeatherViewApp.h"
+
 
 Button btn1 = Button(BUTTON_1);
 Button btn2 = Button(BUTTON_2);
@@ -55,7 +57,6 @@ Button btn3 = Button(BUTTON_3);
 
 
 StartAppLayout startApp;
-WeatherViewAppLayout weatherViewApp;
 
 
 void setup()
@@ -74,14 +75,12 @@ void setup()
 }
 
 void setSwitchClickCall(uint8_t typePage) {
-    if (typePage == START_APP) {
-        btn1.setOnClick(startApp_click1);
-        btn2.setOnClick(startApp_click2);
-        btn3.setOnClick(startApp_click3);
-    }
+    btn1.setOnClick(startApp_click1);
+    btn2.setOnClick(startApp_click2);
+    btn3.setOnClick(startApp_click3);
 }
 
-// =============================START APP ===============================>>
+// ============================= START APP ===============================>>
 
 void startApp_click1(uint8_t _PIN) {
     startApp.click1();
@@ -95,7 +94,7 @@ void startApp_click3(uint8_t _PIN) {
     startApp.click3();
 }
 
-// =============================START APP ===============================>>
+// ============================= START APP ===============================>>
 
 void loop()
 {
