@@ -1,0 +1,9 @@
+{
+    "regions": [
+        {"lat": 47.09412, "lon": 47.49324, "name": "Селитренский сельсовет", "timezone": 4, "isActive": true},
+        {"lat": 56.38720, "lon": 36.50168, "name": "Мос-обл, Клин", "timezone": 3, "isActive": true},
+        {"lat": 55.86334, "lon": 37.50611, "name": "Москва, Ховрино", "timezone": 3, "isActive": true},
+        {"lat": 0.0, "lon": 0.0, "name": "Резервный регион", "timezone": 3, "isActive": false},
+        {"lat": 0.0, "lon": 0.0, "name": "Резервный регион", "timezone": 3, "isActive": false}
+    ]
+}

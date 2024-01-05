@@ -2,25 +2,17 @@ const express = require('express');
 const path = require('path')
 const app = express();
 const fetch = require('node-fetch');
-// app.use(express.static('resources'));
+const { readFileSync } = require('fs');
+
 app.use('/resources', express.static(path.join(__dirname, 'resources')))
 
 const port = 3000;
 
-let data = {"regions": [
-        {"lat": 47.09412, "lon": 47.49324, "name": "Селитренский сельсовет", "timezone": 3, "isActive": true},
-        {"lat": 11.11, "lon": 22.22, "name": "Мос-обл, Клин", "timezone": 3, "isActive": true},
-        {"lat": 11.11, "lon": 22.22, "name": "Москва, Ховрино", "timezone": 4, "isActive": true},
-        {"lat": 0.0, "lon": 0.0, "name": "Резервный регион", "timezone": 3, "isActive": false},
-        {"lat": 0.0, "lon": 0.0, "name": "Резервный регион", "timezone": 3, "isActive": false},
-    ]
-}
-
 app.get('/regions', (req, res) => {
-    res.send(JSON.stringify(data));
-});
 
-let temp = '';
+    let data = readFileSync('./regions.json');
+    res.send(data);
+});
 
 let package = {
     now: 0,
@@ -99,17 +91,14 @@ let package = {
 
 app.get('/weather', async(req, res) => {
     
-    if (temp == "") {
-        let response = await fetch('https://api.weather.yandex.ru/v2/forecast?lat=55.86334&lon=37.50611', {
-            headers: {
-                "X-Yandex-API-Key": "6ddec004-0413-4060-9b06-586cfc5f9299"
-            }
-        });
+    let response = await fetch(`https://api.weather.yandex.ru/v2/forecast?lat=${req.query.lat}&lon=${req.query.lon}`, {
+        headers: {
+            "X-Yandex-API-Key": "6ddec004-0413-4060-9b06-586cfc5f9299"
+        }
+    });
 
-        temp = await response.text();
-        temp = JSON.parse(temp);
-    }
-
+    let temp = await response.text();
+    temp = JSON.parse(temp);
 
     for (key in temp) {
         if (key == 'now') {

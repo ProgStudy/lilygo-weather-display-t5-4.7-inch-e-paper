@@ -14,6 +14,9 @@ class StartAppLayout {
         }
         
         void update() {
+            if (!isActive) {
+                __weatherViewAppLayout.update();
+            }
         }
 
         void click1() {

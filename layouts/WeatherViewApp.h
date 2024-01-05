@@ -42,6 +42,7 @@ const char *ntpServer = "0.europe.pool.ntp.org";
 
 uint8_t currentHour = 0, currentMin = 0, currentSec = 0, eventCnt = 0;
 
+int nextTime = 0;
 weather_yandex_t weatherYandex;
 
 enum alignment
@@ -60,43 +61,82 @@ enum icon_size
 class WeatherViewAppLayout {
     public:
         void show() {
-            
+            this->setRegion(0);
             free(framebuffer);
             displayService.setMemBufferDisplay();
-
-            setup_time();
-
-            if (requestWeatherByLatLon(55.755376, 37.619595)) {
-                showUpdateData();
-            }
-
-            refresh();
         }
 
-
         void refresh() {
-            delay(1000*60*configService.getIntervalTimeRefresh());
+
+            if (nextTime > 0) {
+                return;
+            }
+
+            setup_time();
             
-            update_local_time();
-            
-            if (requestWeatherByLatLon(55.755376, 37.619595)) {
+            if (requestWeatherByLatLon(this->currentRegion.lat, this->currentRegion.lon)) {
                 showUpdateData();
             }
             
             epd_poweroff_all();
+            
+            setTimeInterval();
+        }
 
-            this->refresh();
+        void setTimeInterval() {
+            nextTime = 1000*60*configService.getIntervalTimeRefresh();
+        }
+
+        void stopTimeInterval() {
+            nextTime = 0;
         }
 
         void update() {
+            refresh();
+            if (nextTime > 0) {
+                nextTime -= 60+120;
+                delay(20);
+            }
         }
 
         void click1() {
-            Serial.println("<<<");
+            nextRegion();
         }
 
         void click2() {
-            Serial.println(">>>");
+            prevRegion();
+        }
+
+        void nextRegion() {
+            this->indexCurrentRegion++;
+            
+            if (this->indexCurrentRegion <= configService.lengthRegionList()) {
+                if (!configService.getRegionOfList(this->indexCurrentRegion).isActive) {
+                    this->indexCurrentRegion--;
+                    return;
+                }
+                
+                this->setRegion(this->indexCurrentRegion);
+                return;
+            }
+
+            this->indexCurrentRegion--;
+        }
+
+        void prevRegion() {
+            this->indexCurrentRegion--;
+            
+            if (this->indexCurrentRegion > -1) {
+                this->setRegion(this->indexCurrentRegion);
+                return;
+            }
+
+            this->indexCurrentRegion++;
+        }
+
+        void setRegion(int index) {
+            this->currentRegion = configService.getRegionOfList(index);
+            stopTimeInterval();
         }
 
         void click3() {}
@@ -107,6 +147,9 @@ class WeatherViewAppLayout {
 
     private:
         bool isActive = true;
+        region currentRegion;
+        int indexCurrentRegion = 0;
+
         bool requestWeatherByLatLon(float lat, float lon) {
             
             remoteServer rS = configService.getRemoteServer();
@@ -193,7 +236,7 @@ class WeatherViewAppLayout {
             epd_clear();
             // display_info...
             setFont(osans12b);
-            drawString(10, 15, "Москва", LEFT);
+            drawString(10, 15, this->currentRegion.name, LEFT);
             drawString(400, 15, convert_unix_time(weatherYandex.now), LEFT);
             draw_battery(680, 30);
 
@@ -269,7 +312,7 @@ class WeatherViewAppLayout {
 
         bool setup_time()
         {
-            configTime((3 * 3600), 0, ntpServer, "time.nist.gov");
+            configTime((this->currentRegion.timezone * 3600), 0, ntpServer, "time.nist.gov");
             delay(100);
             return update_local_time();
         }
@@ -311,7 +354,7 @@ class WeatherViewAppLayout {
             }
             else
             {
-                Serial.println("No data image: " + fileName);
+                // Serial.println("No data image: " + fileName);
                 if (IconSize == LargeIcon)
                 setFont(osans18b);
                 else
@@ -703,7 +746,7 @@ class WeatherViewAppLayout {
             uint8_t *data;
             if (SPIFFS.exists(_fileName))
             {
-                Serial.println(_fileName);
+                // Serial.println(_fileName);
 
                 File f = SPIFFS.open(_fileName, FILE_READ);
                 int size = f.size();
@@ -714,7 +757,7 @@ class WeatherViewAppLayout {
             }
             else
             {
-                Serial.println("file not found");
+                // Serial.println("file not found");
                 data = NULL;
                 return data;
             }
