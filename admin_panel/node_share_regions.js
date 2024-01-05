@@ -8,18 +8,16 @@ app.use('/resources', express.static(path.join(__dirname, 'resources')))
 const port = 3000;
 
 let data = {"regions": [
-        {"lat": 47.09412, "lon": 47.49324, "name": "Селитренский сельсовет", "isActive": true},
-        {"lat": 11.11, "lon": 22.22, "name": "Москва, Ховрино", "isActive": true},
-        {"lat": 11.11, "lon": 22.22, "name": "Мос-обл, Клин", "isActive": true},
-        {"lat": 0.0, "lon": 0.0, "name": "Резервный регион", "isActive": false},
-        {"lat": 0.0, "lon": 0.0, "name": "Резервный регион", "isActive": false},
+        {"lat": 47.09412, "lon": 47.49324, "name": "Селитренский сельсовет", "timezone": 3, "isActive": true},
+        {"lat": 11.11, "lon": 22.22, "name": "Мос-обл, Клин", "timezone": 3, "isActive": true},
+        {"lat": 11.11, "lon": 22.22, "name": "Москва, Ховрино", "timezone": 4, "isActive": true},
+        {"lat": 0.0, "lon": 0.0, "name": "Резервный регион", "timezone": 3, "isActive": false},
+        {"lat": 0.0, "lon": 0.0, "name": "Резервный регион", "timezone": 3, "isActive": false},
     ]
 }
 
-app.get('/', (req, res) => {
-    console.log('this request...');
+app.get('/regions', (req, res) => {
     res.send(JSON.stringify(data));
-    console.log('request finish!');
 });
 
 let temp = '';
@@ -99,7 +97,7 @@ let package = {
     }
 }
 
-app.get('/yandex-api-weather', async(req, res) => {
+app.get('/weather', async(req, res) => {
     
     if (temp == "") {
         let response = await fetch('https://api.weather.yandex.ru/v2/forecast?lat=55.86334&lon=37.50611', {

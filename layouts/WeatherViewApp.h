@@ -2,10 +2,6 @@
 #include <ArduinoJson.h>
 #include "esp_adc_cal.h"
 
-#define PRINT_PARAM 1
-#define PRINT_DATA 0
-#define SAVE_LAST_DATA 1
-
 #define White 0xFF
 #define LightGrey 0xBB
 #define Grey 0x88
@@ -14,8 +10,6 @@
 
 #define L_SIZE 250
 #define S_SIZE 100
-
-int wifi_signal = -120;
 
 //Wind
 // const String TXT_WIND_SPEED_DIRECTION = "Wind Speed/Direction";
@@ -67,23 +61,42 @@ class WeatherViewAppLayout {
     public:
         void show() {
             
+            free(framebuffer);
+            displayService.setMemBufferDisplay();
+
             setup_time();
 
             if (requestWeatherByLatLon(55.755376, 37.619595)) {
-                Serial.println("Successful yandex data!");
                 showUpdateData();
             }
+
+            refresh();
+        }
+
+
+        void refresh() {
+            delay(1000*60*configService.getIntervalTimeRefresh());
+            
+            update_local_time();
+            
+            if (requestWeatherByLatLon(55.755376, 37.619595)) {
+                showUpdateData();
+            }
+            
+            epd_poweroff_all();
+
+            this->refresh();
         }
 
         void update() {
         }
 
         void click1() {
-
+            Serial.println("<<<");
         }
 
         void click2() {
-
+            Serial.println(">>>");
         }
 
         void click3() {}
@@ -95,13 +108,15 @@ class WeatherViewAppLayout {
     private:
         bool isActive = true;
         bool requestWeatherByLatLon(float lat, float lon) {
+            
+            remoteServer rS = configService.getRemoteServer();
+
             HTTPClient _http;
-            String _host = "192.168.88.128";
-            String _uri = "/yandex-api-weather?lat=" + String(lat, 6) + "&lon=" + String(lon, 6);
+            String _host = rS.host;
+            String _uri = REMOTE_PATH_WEATHER + "?lat=" + String(lat, 6) + "&lon=" + String(lon, 6);
             WiFiClient _client;
 
-            _http.begin(_client, _host, 3000, _uri, true);
-            _http.addHeader("X-Yandex-API-Key", configService.getYandexApiKey());
+            _http.begin(_client, _host, rS.port, _uri, true);
 
             int _httpCode = _http.GET();
 
@@ -173,9 +188,9 @@ class WeatherViewAppLayout {
         }
 
         void showUpdateData() {
-            displayService.setMemBufferDisplay();
+            // displayService.setMemBufferDisplay();
             epd_poweron();
-
+            epd_clear();
             // display_info...
             setFont(osans12b);
             drawString(10, 15, "Москва", LEFT);
@@ -760,11 +775,13 @@ class WeatherViewAppLayout {
 
         void setFont(GFXfont const &font)
         {
-        currentFont = font;
+            currentFont = font;
         }
 
         void edp_update()
         {
             epd_draw_grayscale_image(epd_full_screen(), framebuffer); // Update the screen
+            free(framebuffer);
+            displayService.setMemBufferDisplay();
         }
 };

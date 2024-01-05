@@ -34,7 +34,6 @@
     <body>
         <main class="container">
             <h3 style="text-align: center;">Admin Panel (Метеостанция)</h3>
-            
             <div class="pure-g" id="main" style="display: flex;">
                 <div class="pure-u-24-24 pw-30">
                     <button class="pure-button  pure-button-primary w-100" onclick="openPage('wifi')">WIFI сеть</button>
@@ -85,29 +84,21 @@
             </div>
             <div class="pure-g" id="meteostation" style="display: none;">
                 <div class="pure-u-24-24 pw-30">
-                    <form class="pure-form pure-form-stacked" onsubmit="saveRemoteLinkRegions(this);return false;">
+                    <form class="pure-form pure-form-stacked" onsubmit="saveRemoteServer(this);return false;">
                             <h2 style="text-align: center;">Настройка метеостанции</h2>
                             <fieldset>
                                 <label for="stacked-email">Хост</label>
                                 <input name="host" id="remote-link-regions-host" class="w-100" type="text" placeholder="8.8.8.8 or test.tt" />
                                 <label for="stacked-email">Порт</label>
                                 <input name="port" id="remote-link-regions-port" class="w-100" type="text" placeholder="80" />
-                                <label for="stacked-email">Путь</label>
-                                <input name="path" id="remote-link-regions-path" class="w-100" type="text" placeholder="path/to/folder" />
+                                <label for="stacked-email">Интервал обновления погоды (в минутах)</label>
+                                <input name="intervalTimeRefresh" id="interval-time-refresh" class="w-100" type="text" placeholder="в минутах" />
                             </fieldset>
                             <button type="submit" class="pure-button pure-button-primary w-100 pure-button-middle">Сохранить</button>
                     </form>
-                    <hr>
-                    <form class="pure-form pure-form-stacked" onsubmit="saveApiKey(this);return false;">
-                        <fieldset>
-                            <label for="stacked-email">Яндекс API ключ</label>
-                            <input name="apiKey" id="yandex-api-key" class="w-100" type="text" placeholder="####-####-####-####" />
-                        </fieldset>
-                        <button type="submit" class="pure-button pure-button-primary w-100 pure-button-middle">Сохранить</button>
-                    </form>
                     <button class="pure-button  button-error w-100 " onclick="openPage('main')">Назад</button>
                     </div>
-                </div>
+            </div>
         </main>
     </body>
     <script>
@@ -143,29 +134,15 @@
 
             if (page == 'meteostation') {
                 document.getElementById('meteostation').style.opacity = '0.5';
-                fetch('/yandexApiKey/load')
+                fetch('/remote-server/load')
                     .then((response) => response.json())
                     .then((data) => {
                         document.getElementById('meteostation').style.opacity = '1';
                         if (data != null) {
-                            document.getElementById('yandex-api-key').value = data.apiKey;
+                            document.getElementById('remote-link-regions-host').value = data.host;
+                            document.getElementById('remote-link-regions-port').value = data.port;
+                            document.getElementById('interval-time-refresh').value = data.intervalTimeRefresh;
                         }
-                        
-                        document.getElementById('meteostation').style.opacity = '0.5';
-                        fetch('/remote-regions/load')
-                            .then((response) => response.json())
-                            .then((data) => {
-                                document.getElementById('meteostation').style.opacity = '1';
-                                if (data != null) {
-                                    document.getElementById('remote-link-regions-host').value = data.host;
-                                    document.getElementById('remote-link-regions-port').value = data.port;
-                                    document.getElementById('remote-link-regions-path').value = data.path;
-                                }
-                            })
-                            .catch(() => {
-                                document.getElementById('meteostation').style.opacity = '1';
-                                alert('Ошибка при загрузки настроек!');
-                            });
                     })
                     .catch(() => {
                         document.getElementById('meteostation').style.opacity = '1';
@@ -193,43 +170,23 @@
                 });
         }
 
-        function saveApiKey(e) {
+        function saveRemoteServer(e) {
             let params = new URLSearchParams(new FormData(e)).toString();
             document.getElementById('meteostation').style.opacity = '0.5';
-            fetch(`/yandexApiKey/save?${params}`)
+            fetch(`/remote-server/save?${params}`)
                 .then((response) => response.json())
                 .then((data) => {
                     document.getElementById('meteostation').style.opacity = '1';
                     if (data != null) {
-                        alert('Yandex API key сохранен!');
+                        alert('Параметры настроек метеостанции сохранены!');
                         return;
                     }
 
-                    alert('Ошибка при сохранение Yandex API key!');
+                    alert('Ошибка при сохранение параметров настроек метеостанции!');
                 })
                 .catch(() => {
                     document.getElementById('meteostation').style.opacity = '1';
-                    alert('Ошибка при сохранение Yandex API key!');
-                });
-        }
-
-        function saveRemoteLinkRegions(e) {
-            let params = new URLSearchParams(new FormData(e)).toString();
-            document.getElementById('meteostation').style.opacity = '0.5';
-            fetch(`/remote-regions/save?${params}`)
-                .then((response) => response.json())
-                .then((data) => {
-                    document.getElementById('meteostation').style.opacity = '1';
-                    if (data != null) {
-                        alert('Параметры список регионов сохранен!');
-                        return;
-                    }
-
-                    alert('Ошибка при сохранение параметров список регионов!');
-                })
-                .catch(() => {
-                    document.getElementById('meteostation').style.opacity = '1';
-                    alert('Ошибка при сохранение параметров список регионов!');
+                    alert('Ошибка при сохранение параметров настроек метеостанции!');
                 });
         }
 

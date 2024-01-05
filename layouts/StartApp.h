@@ -74,13 +74,13 @@ class StartAppLayout {
         }
 
         bool requestRemoteListRegions() {
-            linkRemoteRegins _linkRemote = configService.getUrlRemoteRegions();
+            remoteServer _remoteServer = configService.getRemoteServer();
             HTTPClient _http;
-            String _host = _linkRemote.host;
+            String _host = _remoteServer.host;
             WiFiClient _client;
             _client.stop();
 
-            _http.begin(_client, _host, _linkRemote.port, _linkRemote.path, true);
+            _http.begin(_client, _host, _remoteServer.port, REMOTE_PATH_REGIONS, true);
 
             int _httpCode = _http.GET();
 
@@ -120,7 +120,7 @@ class StartAppLayout {
 
             for (JsonObject item : jo["regions"].as<JsonArray>()) {
                 Serial.println(String((const char*) item["name"]));
-                configService.setRegionOnList(index, item["name"], (float) item["lat"], (float) item["lon"], (bool) item["isActive"]);
+                configService.setRegionOnList(index, item["name"], (float) item["lat"], (float) item["lon"], (int) item["timezone"], (bool) item["isActive"]);
                 index++;
             }
 
@@ -170,6 +170,8 @@ class StartAppLayout {
         }
 
         void showAdminWeb() {
+            // displayService.setMemBufferDisplay();
+            free(framebuffer);
             displayService.setMemBufferDisplay();
 
             epd_poweron();
@@ -204,6 +206,8 @@ class StartAppLayout {
         }
 
         void showSelectBtns() {
+            // displayService.setMemBufferDisplay();
+            free(framebuffer);
             displayService.setMemBufferDisplay();
 
             epd_poweron();

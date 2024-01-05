@@ -34,6 +34,7 @@ int cursor_y = 0;
 // load requests data
 #include "request_data/weather_yandex_data.h"
 #include "request_data/remote_list_region.h"
+#include "request_data/common_data.h"
 
 // load services
 #include "services/ConfigService.h"
@@ -55,9 +56,7 @@ Button btn1 = Button(BUTTON_1);
 Button btn2 = Button(BUTTON_2);
 Button btn3 = Button(BUTTON_3);
 
-
 StartAppLayout startApp;
-
 
 void setup()
 {

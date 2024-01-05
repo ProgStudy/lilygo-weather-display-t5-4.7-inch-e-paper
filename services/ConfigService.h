@@ -2,7 +2,7 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
-const char* pathConfig = "/config_v4.json";
+const char* pathConfig = "/configV1.json";
 
 int _x = 10;
 int _y = 50;
@@ -78,9 +78,9 @@ struct WifiData {
 
 struct Config {
     WifiData wifiList[SIZE_LIST_WIFI];
-    String yandexApiKey;
-    linkRemoteRegins _linkRemoteRegins;
+    remoteServer _remoteServer;
     region _region[SIZE_LIST_REGIONS];
+    int intervalTimeRefresh;
 };
 
 int isInit = 0;
@@ -108,11 +108,10 @@ class ConfigService {
                 
                 isInit = 1;
 
-                config.yandexApiKey = "";
 
-                config._linkRemoteRegins.host = "";
-                config._linkRemoteRegins.port = 80;
-                config._linkRemoteRegins.path = "";
+                config._remoteServer.host = "8.8.4.4";
+                config._remoteServer.port = 80;
+                config.intervalTimeRefresh = 5;
 
                 for (int i = 0; i < SIZE_LIST_REGIONS; i++) {
                     if (i == 0) {
@@ -121,6 +120,7 @@ class ConfigService {
                         config._region[i].name = "Москва";
                         config._region[i].lat = 55.755376;
                         config._region[i].lon = 37.619595;
+                        config._region[i].timezone = 3;
                         continue;
                     }
 
@@ -128,6 +128,7 @@ class ConfigService {
                     config._region[i].name = "Резервный регион";
                     config._region[i].lat = 0.0;
                     config._region[i].lon = 0.0;
+                    config._region[i].timezone = 3;
 
                 }
 
@@ -145,48 +146,49 @@ class ConfigService {
         }
 
         void downloadFile(String pathName) {
-            File f = SPIFFS.open(pathName, FILE_WRITE);
-            HTTPClient _http;
-            String _host = config._linkRemoteRegins.host;
-            WiFiClient _client;
-
-            _client.stop();
 
             _x += 2;
             writeln((GFXfont *) &osans8b, "+", &_x, &_y, NULL);
-
-            _http.begin(_client, _host, config._linkRemoteRegins.port, pathName, true);
-            int _httpCode = _http.GET();
-
-
-            if (_httpCode > 0) {
-                if (_httpCode == HTTP_CODE_OK) {
-                    
-                    // int _size = _client.available();
-
-                    // uint8_t *_data;
-                    // _data = (uint8_t *)ps_calloc(sizeof(uint8_t), _size);
-                    // _client.readBytes(_data, _size);
-                    // f.write(_data, _size);
-                    // f.close();
-                    // free(_data);
-
-                    //-------------------------------
-
-                    int _size = _http.getSize();
-                    String ss = _http.getString();
-                    uint8_t *_data;
-                    _data = (uint8_t *)ps_calloc(sizeof(uint8_t), _size);
-                    ss.getBytes(_data, _size);
-                    f.write(_data, _size);
-                    f.close();
-                    free(_data);
-                }
-            } else {
-                Serial.printf("[HTTP] GET... failed, error: %s\n", _http.errorToString(_httpCode).c_str());
-            }
             
-            _http.end();
+            if (!SPIFFS.exists(pathName)) {
+                File f = SPIFFS.open(pathName, FILE_WRITE);
+                HTTPClient _http;
+                String _host = config._remoteServer.host;
+                WiFiClient _client;
+
+                _client.stop();
+                _http.begin(_client, _host, config._remoteServer.port, pathName, true);
+                int _httpCode = _http.GET();
+
+                if (_httpCode > 0) {
+                    if (_httpCode == HTTP_CODE_OK) {
+                        
+                        int _size = _http.getSize();
+                        if (_size < 20000) {
+                            _size = _client.available();
+
+                            uint8_t *_data;
+                            _data = (uint8_t *)ps_calloc(sizeof(uint8_t), _size);
+                            _client.readBytes(_data, _size);
+                            f.write(_data, _size);
+                            f.close();
+                            free(_data);
+                        } else {
+                            String ss = _http.getString();
+                            uint8_t *_data;
+                            _data = (uint8_t *)ps_calloc(sizeof(uint8_t), _size);
+                            ss.getBytes(_data, _size);
+                            f.write(_data, _size);
+                            f.close();
+                            free(_data);
+                        }
+                    }
+                } else {
+                    Serial.printf("[HTTP] GET... failed, error: %s\n", _http.errorToString(_httpCode).c_str());
+                }
+                
+                _http.end();
+            }
         }
 
         WifiData getWifiOfList(int index) {
@@ -205,7 +207,7 @@ class ConfigService {
             return SIZE_LIST_REGIONS;
         }
 
-        bool setRegionOnList(int listIndex, String name, float lat, float lon, bool isActive) {
+        bool setRegionOnList(int listIndex, String name, float lat, float lon, int timezone, bool isActive) {
             if (listIndex > SIZE_LIST_WIFI) {
                 return false;
             }
@@ -214,6 +216,7 @@ class ConfigService {
             config._region[listIndex].lat        = lat;
             config._region[listIndex].lon        = lon;
             config._region[listIndex].isActive   = isActive;
+            config._region[listIndex].timezone   = timezone;
 
             return true;
         }
@@ -231,26 +234,20 @@ class ConfigService {
             return true;
         }
 
-        String getYandexApiKey() {
-            return config.yandexApiKey;
-        }
-
-        void setYandexApiKey(String apiKey) {
-            config.yandexApiKey = apiKey;
-            
-            saveConfig();
-        }
-
-        void setRemoteUrlListRegions(String host, int port, String path) {
-            config._linkRemoteRegins.host = host;
-            config._linkRemoteRegins.port = port;
-            config._linkRemoteRegins.path = path;
+        void setRemoteServer(String host, int port, int _intervalTimeRefresh) {
+            config._remoteServer.host = host;
+            config._remoteServer.port = port;
+            config.intervalTimeRefresh = _intervalTimeRefresh;
 
             saveConfig();
         }
 
-        linkRemoteRegins getUrlRemoteRegions() {
-            return config._linkRemoteRegins;
+        int getIntervalTimeRefresh() {
+            return config.intervalTimeRefresh;
+        }
+
+        remoteServer getRemoteServer() {
+            return config._remoteServer;
         }
 
         void readConfig() {
@@ -302,16 +299,13 @@ class ConfigService {
                 config._region[index].isActive = (bool) item["isActive"];
                 index++;
             }
-
-            config.yandexApiKey         = String((const char*) doc["yandexApiKey"]);
             
-            config._linkRemoteRegins.host = String((const char*) doc["linkRemoteRegins"]["host"]);
-            config._linkRemoteRegins.port = (int) doc["linkRemoteRegins"]["port"];
-            config._linkRemoteRegins.path = String((const char*) doc["linkRemoteRegins"]["path"]);
+            config._remoteServer.host = String((const char*) doc["remoteServer"]["host"]);
+            config._remoteServer.port = (int) doc["remoteServer"]["port"];
+
+            config.intervalTimeRefresh = (int) doc["intervalTimeRefresh"];
 
             isInit = doc["isInit"];
-
-            config.yandexApiKey = String((const char*) doc["yandexApiKey"]);
 
             doc.clear();
         }
@@ -337,11 +331,10 @@ class ConfigService {
             }
 
             doc["isInit"]                   = isInit;
-            doc["yandexApiKey"]             = config.yandexApiKey;
 
-            doc["linkRemoteRegins"]["host"] = config._linkRemoteRegins.host;
-            doc["linkRemoteRegins"]["port"] = config._linkRemoteRegins.port;
-            doc["linkRemoteRegins"]["path"] = config._linkRemoteRegins.path;
+            doc["remoteServer"]["host"] = config._remoteServer.host;
+            doc["remoteServer"]["port"] = config._remoteServer.port;
+            doc["intervalTimeRefresh"] = config.intervalTimeRefresh;
 
             Serial.println(F("Set init..."));
 

@@ -4,11 +4,6 @@ typedef struct {
     float lat;
     float lon;
     String name;
+    int timezone;
     bool isActive;
 } region;
-
-typedef struct {
-    String host;
-    int port;
-    String path;
-} linkRemoteRegins;

@@ -41,30 +41,13 @@ class WebServerService {
             _server->send(200, F("application/json"), F("{}"));
         }
 
-        void static handle_SaveYandexAPIKey() {
-            configService.setYandexApiKey(_server->arg("apiKey"));
-            _server->send(200, F("application/json"), F("{}"));
-        }   
-
-        void static handle_GetYandexAPIKey() {
+        void static handle_LoadRemoteServer() {
             JsonObject obj = _doc.to<JsonObject>();
-            obj["apiKey"] = configService.getYandexApiKey();
+            remoteServer _remoteServer = configService.getRemoteServer();
 
-            String result = "";
-            serializeJson(_doc, result);
-
-            _server->send(200, F("application/json"), result);
-
-            _doc.clear();
-        }   
-
-        void static handle_LoadRemoteUrlListRegion() {
-            JsonObject obj = _doc.to<JsonObject>();
-            linkRemoteRegins _linkRemoteRegions = configService.getUrlRemoteRegions();
-
-            obj["host"] = _linkRemoteRegions.host;
-            obj["port"] = _linkRemoteRegions.port;
-            obj["path"] = _linkRemoteRegions.path;
+            obj["host"] = _remoteServer.host;
+            obj["port"] = _remoteServer.port;
+            obj["intervalTimeRefresh"] = configService.getIntervalTimeRefresh();
 
             String result = "";
             serializeJson(_doc, result);
@@ -74,8 +57,8 @@ class WebServerService {
             _doc.clear();
         }
 
-        void static handle_SaveRemoteUrlListRegion() {
-            configService.setRemoteUrlListRegions(_server->arg("host"), _server->arg("port").toInt(), _server->arg("path"));
+        void static handle_SaveRemoteServer() {
+            configService.setRemoteServer(_server->arg("host"), _server->arg("port").toInt(), _server->arg("intervalTimeRefresh").toInt());
             _server->send(200, F("application/json"), F("{}"));
         }
 
@@ -110,11 +93,8 @@ class WebServerService {
             _server->on(F("/wifi/list"), WebServerService::handle_GetListWifi);
             _server->on(F("/wifi/save"), WebServerService::handle_SaveWifi);
 
-            _server->on(F("/yandexApiKey/load"), WebServerService::handle_GetYandexAPIKey);
-            _server->on(F("/yandexApiKey/save"), WebServerService::handle_SaveYandexAPIKey);
-
-            _server->on(F("/remote-regions/load"), WebServerService::handle_LoadRemoteUrlListRegion);
-            _server->on(F("/remote-regions/save"), WebServerService::handle_SaveRemoteUrlListRegion);
+            _server->on(F("/remote-server/load"), WebServerService::handle_LoadRemoteServer);
+            _server->on(F("/remote-server/save"), WebServerService::handle_SaveRemoteServer);
 
             _server->onNotFound(WebServerService::handle_NotFound);
         }
