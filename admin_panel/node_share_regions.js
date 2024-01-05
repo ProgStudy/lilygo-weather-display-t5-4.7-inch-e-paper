@@ -93,7 +93,7 @@ app.get('/weather', async(req, res) => {
     
     let response = await fetch(`https://api.weather.yandex.ru/v2/forecast?lat=${req.query.lat}&lon=${req.query.lon}`, {
         headers: {
-            "X-Yandex-API-Key": "6ddec004-0413-4060-9b06-586cfc5f9299"
+            "X-Yandex-API-Key": "<API KEY>"
         }
     });
 
