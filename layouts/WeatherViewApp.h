@@ -77,8 +77,10 @@ class WeatherViewAppLayout {
             if (requestWeatherByLatLon(this->currentRegion.lat, this->currentRegion.lon)) {
                 showUpdateData();
             }
-            
-            epd_poweroff_all();
+
+            //Temp fix for battery power
+            //TODO: Find hardware power bug and rewrite code to privente black display in battery mode
+            //epd_poweroff_all();
             
             setTimeInterval();
         }
