@@ -80,7 +80,7 @@ class WeatherViewAppLayout {
 
             //Temp fix for battery power
             //TODO: Find hardware power bug and rewrite code to privente black display in battery mode
-            //epd_poweroff_all();
+            epd_poweroff();
             
             setTimeInterval();
         }
@@ -235,30 +235,29 @@ class WeatherViewAppLayout {
         void showUpdateData() {
             // displayService.setMemBufferDisplay();
             epd_poweron();
-            epd_clear();
+            this->edp_clear();
+
+            // display_weather...
+            display_fact_weather();
+            display_forecast_weather();
+            drawLine(0, 50, EPD_WIDTH, 50, Black);
+
             // display_info...
             setFont(osans12b);
             drawString(10, 15, this->currentRegion.name, LEFT);
             drawString(400, 15, convert_unix_time(weatherYandex.now), LEFT);
             draw_battery(680, 30);
 
-            // display_weather...
-            drawLine(0, 50, EPD_WIDTH, 50, Black);
-            display_fact_weather();
-            display_forecast_weather();
-
             this->edp_update();
-            // delay(5000);
-            // epd_poweroff_all();
         }
 
         void display_fact_weather()
         {
+            this->draw_conditions_section(20, 50, weatherYandex.fact.icon, 0, LargeIcon);
             draw_wind_section(830, 200, weatherYandex.fact.wind_dir, weatherYandex.fact.wind_speed, weatherYandex.fact.wind_gust, 100, true);
             setFont(osans18b);
             drawString(20, 60, getSeason(weatherYandex.fact.season), LEFT);
             draw_thp_section(480, 70);
-            this->draw_conditions_section(20, 50, weatherYandex.fact.icon, 0, LargeIcon);
             draw_sun_section(480, 330);
         }
 
@@ -288,7 +287,9 @@ class WeatherViewAppLayout {
             //         .y = y,
             //         .width = 36,
             //         .height = 40};
-            //     epd_draw_grayscale_image(area, (uint8_t *)data);
+
+            //     edp_draw_sub_image(area, (uint8_t *)data);
+            //     //epd_draw_grayscale_image(area, (uint8_t *)data);
             //     free(data);
             // }
 
@@ -351,7 +352,7 @@ class WeatherViewAppLayout {
                     .y = y,
                     .width = ((IconSize == LargeIcon) ? (L_SIZE) : (S_SIZE)),
                     .height = ((IconSize == LargeIcon) ? (L_SIZE) : (S_SIZE))};
-                epd_draw_grayscale_image(area, (uint8_t *)data);
+                edp_draw_sub_image(area, (uint8_t *)data);
                 free(data);
             }
             else
@@ -578,14 +579,14 @@ class WeatherViewAppLayout {
             if (data != NULL)
             {
                 Rect_t area = {.x = x - r - 10, .y = y - 50, .width = 47, .height = 35};
-                epd_draw_grayscale_image(area, (uint8_t *)data);
+                edp_draw_sub_image(area, (uint8_t *)data);
                 free(data);
             }
             data = load_file("sunset.bin");
             if (data != NULL)
             {
                 Rect_t area = {.x = x + r - 35, .y = y - 50, .width = 47, .height = 40};
-                epd_draw_grayscale_image(area, (uint8_t *)data);
+                edp_draw_sub_image(area, (uint8_t *)data);
                 free(data);
             }
             setFont(osans10b);
@@ -826,7 +827,33 @@ class WeatherViewAppLayout {
         void edp_update()
         {
             epd_draw_grayscale_image(epd_full_screen(), framebuffer); // Update the screen
+            //epd_draw_grayscale_image(epd_full_screen(), framebuffer); // Update the screen
             free(framebuffer);
             displayService.setMemBufferDisplay();
+        }
+        void edp_clear()
+        {
+            /*
+            Rect_t clean_area = epd_full_screen();
+            epd_clear();
+            for (int i = 0; i < 20; i++)
+            {
+                epd_push_pixels(clean_area, 50, 0);
+                delay(10);
+            }
+            epd_clear();
+            for (int i = 0; i < 40; i++)
+            {
+                epd_push_pixels(clean_area, 50, 1);
+                delay(10);
+            }
+            */
+            epd_clear();
+        }
+
+        void edp_draw_sub_image(Rect_t image_area, uint8_t *image_data)
+        {
+            epd_copy_to_framebuffer(image_area, image_data, framebuffer);
+            //epd_draw_grayscale_image(image_area, image_data);
         }
 };
