@@ -1,4 +1,4 @@
-const char *HTML_CONTENT_HOME = R"=====(
+const char *HTML_CONTENT_HOME PROGMEM = R"=====(
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -85,7 +85,7 @@ const char *HTML_CONTENT_HOME = R"=====(
             </div>
             <div class="pure-g" id="meteostation" style="display: none;">
                 <div class="pure-u-24-24 pw-30">
-                    <form class="pure-form pure-form-stacked" onsubmit="saveRemoteLinkRegions(this);return false;">
+                    <form class="pure-form pure-form-stacked" onsubmit="saveRemoteServer(this);return false;">
                             <h2 style="text-align: center;">Настройка метеостанции</h2>
                             <fieldset>
                                 <label for="stacked-email">Хост</label>

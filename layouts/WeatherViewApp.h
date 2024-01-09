@@ -158,7 +158,7 @@ class WeatherViewAppLayout {
 
             HTTPClient _http;
             String _host = rS.host;
-            String _uri = REMOTE_PATH_WEATHER + "?lat=" + String(lat, 6) + "&lon=" + String(lon, 6);
+            String _uri = REMOTE_PATH_WEATHER + "?lat=" + String(lat, 6) + "&lon=" + String(lon, 6) +  "&innerApiKey=" + INNER_API_KEY;
             WiFiClient _client;
 
             _http.begin(_client, _host, rS.port, _uri, true);

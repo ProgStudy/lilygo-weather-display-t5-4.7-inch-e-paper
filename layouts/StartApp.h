@@ -83,7 +83,7 @@ class StartAppLayout {
             WiFiClient _client;
             _client.stop();
 
-            _http.begin(_client, _host, _remoteServer.port, REMOTE_PATH_REGIONS, true);
+            _http.begin(_client, _host, _remoteServer.port, REMOTE_PATH_REGIONS + "?innerApiKey=" + INNER_API_KEY, true);
 
             int _httpCode = _http.GET();
 

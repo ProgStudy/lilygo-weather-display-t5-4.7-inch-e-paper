@@ -1,2 +1,3 @@
-admin_panel/node_modules
-admin_panel/package-lock.json
+node_server/node_modules
+node_server/package-lock.json
+node_server/.env

@@ -1,3 +1,5 @@
+require('dotenv').config();
+const env = process.env;
 const express = require('express');
 const path = require('path')
 const app = express();
@@ -9,6 +11,9 @@ app.use('/resources', express.static(path.join(__dirname, 'resources')))
 const port = 3000;
 
 app.get('/regions', (req, res) => {
+    if (!isConfirmInnerAPIKey(req.query.innerApiKey)) {
+        return res.status(403).json({"message":"forbidden"});
+    }
 
     let data = readFileSync('./regions.json');
     res.send(data);
@@ -90,10 +95,13 @@ let package = {
 }
 
 app.get('/weather', async(req, res) => {
+    if (!isConfirmInnerAPIKey(req.query.innerApiKey)) {
+        return res.status(403).json({"message":"forbidden"});
+    }
     
     let response = await fetch(`https://api.weather.yandex.ru/v2/forecast?lat=${req.query.lat}&lon=${req.query.lon}`, {
         headers: {
-            "X-Yandex-API-Key": "<API KEY>"
+            "X-Yandex-API-Key": env.WEATHER_YANDEX_API_KEY
         }
     });
 
@@ -151,6 +159,10 @@ app.get('/weather', async(req, res) => {
     return res.json(package);
 });
 
+let isConfirmInnerAPIKey = (apiKey) => {
+    return apiKey == env.INNER_API_KEY;
+}
+
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
+    console.log(`App listening on port ${port}`)
 })

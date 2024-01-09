@@ -2,11 +2,14 @@
     #error "Please enable PSRAM !!!"
 #endif
 
+#include "constants.h";
+
 // load libs
 #include <EEPROM.h>
 #include "epd_driver.h"
 
 #define START_APP (1)
+
 
 uint8_t *framebuffer;
 
