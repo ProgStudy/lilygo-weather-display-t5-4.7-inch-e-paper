@@ -4,11 +4,83 @@ const express = require('express');
 const path = require('path')
 const app = express();
 const fetch = require('node-fetch');
+const dateFormat = require('date-format');
 const { readFileSync } = require('fs');
 
 app.use('/resources', express.static(path.join(__dirname, 'resources')))
 
 const port = 3000;
+
+let code_condition = [
+    {
+        name: 'skc',
+        hasStatus: true,
+        code: [0]
+    },
+    {
+        name: 'fg',
+        hasStatus: true,
+        code: [1,2]
+    },
+    {
+        name: 'bkn',
+        code: [3],
+        hasStatus: true,
+    },
+    {
+        name: 'ovc_ra_sn',
+        code: [51, 53, 55]
+    },
+    {
+        name: 'bkn_-ra',
+        code: [61],
+        hasStatus: true,
+    },
+    {
+        name: 'bkn_ra',
+        code: [63],
+        hasStatus: true,
+    },
+    {
+        name: 'bkn_+ra',
+        code: [65],
+        hasStatus: true,
+    },
+    {
+        name: 'ovc_ra_sn',
+        code: [66, 67]
+    },
+    {
+        name: 'bkn_-sn',
+        code: [71, 73, 75],
+        hasStatus: true,
+    },
+    {
+        name: 'ovc_sn',
+        code: [71, 73, 75]
+    },
+    {
+        name: 'bkn_+sn',
+        code: [71, 73, 75],
+        hasStatus: true,
+    },
+    {
+        name: 'ovc_ha',
+        code: [77]
+    },
+    {
+        name: 'ovc_ts',
+        code: [95]
+    },
+    {
+        name: 'ovc_ts_ra',
+        code: [96,97,98]
+    },
+    {
+        name: 'ovc_ts_ha',
+        code: [99]
+    },
+];
 
 app.get('/regions', (req, res) => {
     if (!isConfirmInnerAPIKey(req.query.innerApiKey)) {
@@ -94,12 +166,37 @@ let package = {
     }
 }
 
-app.get('/weather', async(req, res) => {
-    if (!isConfirmInnerAPIKey(req.query.innerApiKey)) {
-        return res.status(403).json({"message":"forbidden"});
+function getIcon(code, isDay = false) {
+    for (let item of code_condition) {
+        if (item.code.includes(code)) {
+            return item.name + (item.hasStatus ? (isDay ? '_d' : '_n') : '');
+        }
     }
-    
-    let response = await fetch(`https://api.weather.yandex.ru/v2/forecast?lat=${req.query.lat}&lon=${req.query.lon}`, {
+}
+
+function getFactByTime(obj, time) {
+    let index = obj.hourly.time.indexOf(dateFormat.asString('yyyy-MM-dd', new Date()) + 'T' + time);
+    return {
+        condition: "",
+        temp: parseInt(obj.hourly.temperature_2m[index]),
+        feels_like: parseInt(obj.hourly.apparent_temperature[index]),
+        wind_dir: 'N',
+        wind_gust: parseInt(obj.hourly.wind_gusts_10m[index]),
+        wind_speed: parseInt(obj.hourly.wind_speed_10m[index]),
+        icon: getIcon(obj.hourly.weather_code[index], '00:00' != time),
+        humidity: obj.hourly.relative_humidity_2m[index],
+        part_name: '00:00' != time ? 'day' : 'night',
+        pressure_mm: obj.hourly.pressure_msl[index] / 1.333,
+        prec_prob: "",
+        prec_mm: "",
+        temp_avg: "",
+    }
+}
+
+app.get('/weather', async(req, res) => {
+
+
+    let response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${req.query.lat}&longitude=${req.query.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=pressure_msl,relative_humidity_2m,temperature_2m,apparent_temperature,precipitation,rain,showers,snowfall,snow_depth,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=weather_code,temperature_2m_min,apparent_temperature_min,sunrise,sunset,daylight_duration,wind_speed_10m_max,wind_gusts_10m_max&timezone=Europe%2FMoscow&forecast_days=1`, {
         headers: {
             "X-Yandex-API-Key": env.WEATHER_YANDEX_API_KEY
         }
@@ -108,53 +205,93 @@ app.get('/weather', async(req, res) => {
     let temp = await response.text();
     temp = JSON.parse(temp);
 
-    for (key in temp) {
-        if (key == 'now') {
-            package.now = temp.now;
-            continue;
-        }
+    // console.log(temp);
 
-        if (key == 'fact') {
-            for(kkey in temp[key]) {
-                if (package[key][kkey] != undefined) {
-                    package[key][kkey] = temp[key][kkey];
-                }
-            }
-            continue;
-        }
+    package.now = (Date.parse(temp.current.time.replace('T', ' ') + ':00')) / 1000;
+    package.forecasts.date = temp.daily.time[0];
+    package.forecasts.sunrise = temp.daily.sunrise[0].split('T')[1];
+    package.forecasts.sunset = temp.daily.sunset[0].split('T')[1];
 
-        if (key == 'forecasts') {
-            for(kkey in temp[key][0]) {
-                if (package[key][kkey] != undefined) {
-                    if (kkey == 'parts') {
-                        for (i = 0; i < package.forecasts.parts.length; i++) {
-                            // console.log(temp[key][0][kkey]);
+    package.fact.temp = parseInt(temp.current.temperature_2m);
+    package.fact.feels_like = parseInt(temp.current.apparent_temperature);
+    package.fact.wind_dir = 'N';
+    package.fact.wind_gust = parseInt(temp.current.wind_gusts_10m);
+    package.fact.wind_speed = parseInt(temp.current.wind_speed_10m);
+    package.fact.icon = getIcon(temp.current.weather_code, temp.current.is_day == 1);
+    package.fact.humidity = temp.current.relative_humidity_2m;
+    package.fact.pressure_mm = temp.current.pressure_msl / 1.333;
+    
+    package.forecasts.parts = [
+        getFactByTime(temp, '00:00'),
+        getFactByTime(temp, '12:00'),
+    ];
+    
 
-                            for(kkkey in temp[key][0][kkey]) {
-                                let obj = temp[key][0][kkey][kkkey];
+    // ==============================================
 
-                                for (kkkkey in obj) {
-                                    // package.forecasts.parts[i]['icon'] = "111";
-                                    if (package.forecasts.parts[i][kkkkey] != undefined && package.forecasts.parts[i].part_name == kkkey) {
-                                        package[key][kkey][i][kkkkey] = obj[kkkkey];
-                                    }       
-                                }
-                            }
-                        }
-                    } else {
-                        for(kkey in temp[key][0]) {
-                            if (kkey != 'parts') {
-                                if (package[key][kkey] != undefined) {
-                                    package[key][kkey] = temp[key][0][kkey];
-                                }
-                            }
-                        }
-                    }
+    // if (!isConfirmInnerAPIKey(req.query.innerApiKey)) {
+    //     return res.status(403).json({"message":"forbidden"});
+    // }
+    
+    // let response = await fetch(`https://api.weather.yandex.ru/v2/forecast?lat=${req.query.lat}&lon=${req.query.lon}`, {
+    //     headers: {
+    //         "X-Yandex-API-Key": env.WEATHER_YANDEX_API_KEY
+    //     }
+    // });
+
+    // let temp = await response.text();
+    // temp = JSON.parse(temp);
+
+    // for (key in temp) {
+    //     if (key == 'now') {
+    //         package.now = temp.now;
+    //         continue;
+    //     }
+
+    //     if (key == 'fact') {
+    //         for(kkey in temp[key]) {
+    //             if (package[key][kkey] != undefined) {
+    //                 package[key][kkey] = temp[key][kkey];
+    //             }
+    //         }
+    //         continue;
+    //     }
+
+    //     if (key == 'forecasts') {
+    //         for(kkey in temp[key][0]) {
+    //             if (package[key][kkey] != undefined) {
+    //                 if (kkey == 'parts') {
+    //                     for (i = 0; i < package.forecasts.parts.length; i++) {
+    //                         // console.log(temp[key][0][kkey]);
+
+    //                         for(kkkey in temp[key][0][kkey]) {
+    //                             let obj = temp[key][0][kkey][kkkey];
+
+    //                             for (kkkkey in obj) {
+    //                                 // package.forecasts.parts[i]['icon'] = "111";
+    //                                 if (package.forecasts.parts[i][kkkkey] != undefined && package.forecasts.parts[i].part_name == kkkey) {
+    //                                     package[key][kkey][i][kkkkey] = obj[kkkkey];
+    //                                 }       
+    //                             }
+    //                         }
+    //                     }
+    //                 } else {
+    //                     for(kkey in temp[key][0]) {
+    //                         if (kkey != 'parts') {
+    //                             if (package[key][kkey] != undefined) {
+    //                                 package[key][kkey] = temp[key][0][kkey];
+    //                             }
+    //                         }
+    //                     }
+    //                 }
                     
-                }
-            }
-        }
-    }
+    //             }
+    //         }
+    //     }
+    // }
+
+    console.log(package);
+    
     
     return res.json(package);
 });
