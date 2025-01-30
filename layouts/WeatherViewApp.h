@@ -204,7 +204,7 @@ class WeatherViewAppLayout {
             weatherObj.fact.pressure_mm = (const uint16_t) jo["fact"]["pressure_mm"];
             weatherObj.fact.season = (const char*) jo["fact"]["season"];
             weatherObj.fact.temp = (const int8_t) jo["fact"]["temp"];
-            weatherObj.fact.wind_dir = (const float) jo["fact"]["wind_dir"];
+            weatherObj.fact.wind_dir = (const char*) jo["fact"]["wind_dir"];
             weatherObj.fact.wind_gust = (const float) jo["fact"]["wind_gust"];
             weatherObj.fact.wind_speed = (const float) jo["fact"]["wind_speed"];
 
@@ -374,8 +374,8 @@ class WeatherViewAppLayout {
             {
                 drawStringWithLB(x + 10, y + S_SIZE - 5, get_description_condition(weatherObj.forecast.parts[forecast_part].condition), osans6b, LEFT);
                 uint8_t prec_prob = weatherObj.forecast.parts[forecast_part].prec_prob;
-                drawString(x + S_SIZE / 2, y + S_SIZE + 30, String(weatherObj.forecast.parts[forecast_part].prec_mm, 1) + "mm", CENTER);
-                drawString(x + S_SIZE / 2, y + S_SIZE + 45, String(prec_prob) + "%", CENTER);
+                // drawString(x + S_SIZE / 2, y + S_SIZE + 30, String(weatherObj.forecast.parts[forecast_part].prec_mm, 1) + "mm", CENTER);
+                // drawString(x + S_SIZE / 2, y + S_SIZE + 45, String(prec_prob) + "%", CENTER);
             }
         }
 
@@ -388,7 +388,6 @@ class WeatherViewAppLayout {
             for (uint8_t i = 0; i < 2; i++)
             {
                 setFont(osans10b);
-                drawString(i * xOffSet + 10, y + 5, get_partName(weatherObj.forecast.parts[i].part_name), LEFT);
                 draw_conditions_section(i * xOffSet + 10, y + 20, weatherObj.forecast.parts[i].icon, i, SmallIcon);
                 draw_wind_section((i * xOffSet) + (i + xOffSet - 90), y + 90,
                                 weatherObj.forecast.parts[i].wind_dir,
@@ -396,6 +395,7 @@ class WeatherViewAppLayout {
                                 weatherObj.forecast.parts[i].wind_gust,
                                 60, false);
                 draw_thp_forecast_section(i * xOffSet + 210, y + 30, i);
+                drawString(i * xOffSet + 10, y + 5, get_partName(weatherObj.forecast.parts[i].part_name), LEFT);
             }
         }
 
