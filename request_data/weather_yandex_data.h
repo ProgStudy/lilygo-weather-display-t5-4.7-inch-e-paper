@@ -1,4 +1,3 @@
-// https://api.weather.yandex.ru/v2/forecast?lat=55.86334&lon=37.50611&limit=1&hours=false&extra=false
 typedef struct
 {
     String condition;

@@ -1,3 +1,5 @@
 node_server/node_modules
 node_server/package-lock.json
 node_server/.env
+.vscode/c_cpp_properties.json
+.vscode/settings.json

@@ -18,8 +18,7 @@ let code_condition = [
         code: [0]
     },
     {
-        name: 'fg',
-        hasStatus: true,
+        name: 'ovc',
         code: [1,2]
     },
     {
@@ -83,12 +82,13 @@ let code_condition = [
 ];
 
 app.get('/regions', (req, res) => {
+
     if (!isConfirmInnerAPIKey(req.query.innerApiKey)) {
         return res.status(403).json({"message":"forbidden"});
     }
-
+    
     let data = readFileSync('./regions.json');
-    res.send(data);
+    return res.send(data);
 });
 
 let package = {
@@ -195,17 +195,14 @@ function getFactByTime(obj, time) {
 
 app.get('/weather', async(req, res) => {
 
+    if (!isConfirmInnerAPIKey(req.query.innerApiKey)) {
+        return res.status(403).json({"message":"forbidden"});
+    }
 
-    let response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${req.query.lat}&longitude=${req.query.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=pressure_msl,relative_humidity_2m,temperature_2m,apparent_temperature,precipitation,rain,showers,snowfall,snow_depth,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=weather_code,temperature_2m_min,apparent_temperature_min,sunrise,sunset,daylight_duration,wind_speed_10m_max,wind_gusts_10m_max&timezone=Europe%2FMoscow&forecast_days=1`, {
-        headers: {
-            "X-Yandex-API-Key": env.WEATHER_YANDEX_API_KEY
-        }
-    });
+    let response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${req.query.lat}&longitude=${req.query.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=pressure_msl,relative_humidity_2m,temperature_2m,apparent_temperature,precipitation,rain,showers,snowfall,snow_depth,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=weather_code,temperature_2m_min,apparent_temperature_min,sunrise,sunset,daylight_duration,wind_speed_10m_max,wind_gusts_10m_max&timezone=Europe%2FMoscow&forecast_days=1`);
 
     let temp = await response.text();
     temp = JSON.parse(temp);
-
-    // console.log(temp);
 
     package.now = (Date.parse(temp.current.time.replace('T', ' ') + ':00')) / 1000;
     package.forecasts.date = temp.daily.time[0];
@@ -225,73 +222,8 @@ app.get('/weather', async(req, res) => {
         getFactByTime(temp, '00:00'),
         getFactByTime(temp, '12:00'),
     ];
-    
-
-    // ==============================================
-
-    // if (!isConfirmInnerAPIKey(req.query.innerApiKey)) {
-    //     return res.status(403).json({"message":"forbidden"});
-    // }
-    
-    // let response = await fetch(`https://api.weather.yandex.ru/v2/forecast?lat=${req.query.lat}&lon=${req.query.lon}`, {
-    //     headers: {
-    //         "X-Yandex-API-Key": env.WEATHER_YANDEX_API_KEY
-    //     }
-    // });
-
-    // let temp = await response.text();
-    // temp = JSON.parse(temp);
-
-    // for (key in temp) {
-    //     if (key == 'now') {
-    //         package.now = temp.now;
-    //         continue;
-    //     }
-
-    //     if (key == 'fact') {
-    //         for(kkey in temp[key]) {
-    //             if (package[key][kkey] != undefined) {
-    //                 package[key][kkey] = temp[key][kkey];
-    //             }
-    //         }
-    //         continue;
-    //     }
-
-    //     if (key == 'forecasts') {
-    //         for(kkey in temp[key][0]) {
-    //             if (package[key][kkey] != undefined) {
-    //                 if (kkey == 'parts') {
-    //                     for (i = 0; i < package.forecasts.parts.length; i++) {
-    //                         // console.log(temp[key][0][kkey]);
-
-    //                         for(kkkey in temp[key][0][kkey]) {
-    //                             let obj = temp[key][0][kkey][kkkey];
-
-    //                             for (kkkkey in obj) {
-    //                                 // package.forecasts.parts[i]['icon'] = "111";
-    //                                 if (package.forecasts.parts[i][kkkkey] != undefined && package.forecasts.parts[i].part_name == kkkey) {
-    //                                     package[key][kkey][i][kkkkey] = obj[kkkkey];
-    //                                 }       
-    //                             }
-    //                         }
-    //                     }
-    //                 } else {
-    //                     for(kkey in temp[key][0]) {
-    //                         if (kkey != 'parts') {
-    //                             if (package[key][kkey] != undefined) {
-    //                                 package[key][kkey] = temp[key][0][kkey];
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-                    
-    //             }
-    //         }
-    //     }
-    // }
 
     console.log(package);
-    
     
     return res.json(package);
 });

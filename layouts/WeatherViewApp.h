@@ -43,7 +43,7 @@ const char *ntpServer = "0.europe.pool.ntp.org";
 uint8_t currentHour = 0, currentMin = 0, currentSec = 0, eventCnt = 0;
 
 int nextTime = 0;
-weather_yandex_t weatherYandex;
+weather_yandex_t weatherObj;
 
 enum alignment
 {
@@ -171,7 +171,7 @@ class WeatherViewAppLayout {
 
                 String _data = _http.getString();
 
-                bool isResult = yandexJsonDecode(_data, _data.length());
+                bool isResult = apiJsonDecode(_data, _data.length());
 
                 _client.stop();
                 _http.end();
@@ -184,7 +184,7 @@ class WeatherViewAppLayout {
             return false;
         }
 
-        bool yandexJsonDecode(String jsonStr, int size)
+        bool apiJsonDecode(String jsonStr, int size)
         {
             DynamicJsonDocument jsonDoc(1440);
             DeserializationError error = deserializeJson(jsonDoc, jsonStr); // Deserialize the JSON document
@@ -197,37 +197,37 @@ class WeatherViewAppLayout {
             // // convert it to a JsonObject
             JsonObject jo = jsonDoc.as<JsonObject>();
             // // // read from JsonObject
-            weatherYandex.fact.condition = (const char*) jo["fact"]["condition"];
-            weatherYandex.fact.feels_like = (const int8_t) jo["fact"]["feels_like"];
-            weatherYandex.fact.humidity = (const uint8_t) jo["fact"]["humidity"];
-            weatherYandex.fact.icon = (const char*) jo["fact"]["icon"];
-            weatherYandex.fact.pressure_mm = (const uint16_t) jo["fact"]["pressure_mm"];
-            weatherYandex.fact.season = (const char*) jo["fact"]["season"];
-            weatherYandex.fact.temp = (const int8_t) jo["fact"]["temp"];
-            weatherYandex.fact.wind_dir = (const float) jo["fact"]["wind_dir"];
-            weatherYandex.fact.wind_gust = (const float) jo["fact"]["wind_gust"];
-            weatherYandex.fact.wind_speed = (const float) jo["fact"]["wind_speed"];
+            weatherObj.fact.condition = (const char*) jo["fact"]["condition"];
+            weatherObj.fact.feels_like = (const int8_t) jo["fact"]["feels_like"];
+            weatherObj.fact.humidity = (const uint8_t) jo["fact"]["humidity"];
+            weatherObj.fact.icon = (const char*) jo["fact"]["icon"];
+            weatherObj.fact.pressure_mm = (const uint16_t) jo["fact"]["pressure_mm"];
+            weatherObj.fact.season = (const char*) jo["fact"]["season"];
+            weatherObj.fact.temp = (const int8_t) jo["fact"]["temp"];
+            weatherObj.fact.wind_dir = (const float) jo["fact"]["wind_dir"];
+            weatherObj.fact.wind_gust = (const float) jo["fact"]["wind_gust"];
+            weatherObj.fact.wind_speed = (const float) jo["fact"]["wind_speed"];
 
-            // weatherYandex.forecast.date = String((const char*) jo["forecast"]["date"]);
+            // weatherObj.forecast.date = String((const char*) jo["forecast"]["date"]);
 
             for (uint8_t i = 0; i < 2; i++)
             {
-                weatherYandex.forecast.parts[i].condition = String((const char*) jo["forecasts"]["parts"][i]["condition"]);
-                weatherYandex.forecast.parts[i].condition = String((const char*) jo["forecasts"]["parts"][i]["condition"]);
-                weatherYandex.forecast.parts[i].icon = String((const char*) jo["forecasts"]["parts"][i]["icon"]);
-                weatherYandex.forecast.parts[i].part_name = String((const char*) jo["forecasts"]["parts"][i]["part_name"]);
-                weatherYandex.forecast.parts[i].wind_dir = String((const char*) jo["forecasts"]["parts"][i]["wind_dir"]);
-                weatherYandex.forecast.parts[i].wind_gust = (const float) jo["forecasts"]["parts"][i]["wind_gust"];
-                weatherYandex.forecast.parts[i].wind_speed = (const float) jo["forecasts"]["parts"][i]["wind_speed"];
-                weatherYandex.forecast.parts[i].feels_like = (const int) jo["forecasts"]["parts"][i]["feels_like"];
-                weatherYandex.forecast.parts[i].pressure_mm = (const int) jo["forecasts"]["parts"][i]["pressure_mm"];
-                weatherYandex.forecast.parts[i].temp_avg = (const int) jo["forecasts"]["parts"][i]["temp_avg"];
-                weatherYandex.forecast.parts[i].prec_mm = (const float) jo["forecasts"]["parts"][i]["prec_mm"];
-                weatherYandex.forecast.parts[i].prec_prob = (const int) jo["forecasts"]["parts"][i]["prec_prob"];
+                weatherObj.forecast.parts[i].condition = String((const char*) jo["forecasts"]["parts"][i]["condition"]);
+                weatherObj.forecast.parts[i].condition = String((const char*) jo["forecasts"]["parts"][i]["condition"]);
+                weatherObj.forecast.parts[i].icon = String((const char*) jo["forecasts"]["parts"][i]["icon"]);
+                weatherObj.forecast.parts[i].part_name = String((const char*) jo["forecasts"]["parts"][i]["part_name"]);
+                weatherObj.forecast.parts[i].wind_dir = String((const char*) jo["forecasts"]["parts"][i]["wind_dir"]);
+                weatherObj.forecast.parts[i].wind_gust = (const float) jo["forecasts"]["parts"][i]["wind_gust"];
+                weatherObj.forecast.parts[i].wind_speed = (const float) jo["forecasts"]["parts"][i]["wind_speed"];
+                weatherObj.forecast.parts[i].feels_like = (const int) jo["forecasts"]["parts"][i]["feels_like"];
+                weatherObj.forecast.parts[i].pressure_mm = (const int) jo["forecasts"]["parts"][i]["pressure_mm"];
+                weatherObj.forecast.parts[i].temp_avg = (const int) jo["forecasts"]["parts"][i]["temp_avg"];
+                weatherObj.forecast.parts[i].prec_mm = (const float) jo["forecasts"]["parts"][i]["prec_mm"];
+                weatherObj.forecast.parts[i].prec_prob = (const int) jo["forecasts"]["parts"][i]["prec_prob"];
             }
-            weatherYandex.forecast.sunrise = (const char*) jo["forecasts"]["sunrise"];
-            weatherYandex.forecast.sunset = (const char*) jo["forecasts"]["sunset"];
-            weatherYandex.now = (const int) jo["now"];
+            weatherObj.forecast.sunrise = (const char*) jo["forecasts"]["sunrise"];
+            weatherObj.forecast.sunset = (const char*) jo["forecasts"]["sunset"];
+            weatherObj.now = (const int) jo["now"];
             jsonDoc.clear();
             return true;
         }
@@ -245,7 +245,7 @@ class WeatherViewAppLayout {
             // display_info...
             setFont(osans12b);
             drawString(10, 15, this->currentRegion.name, LEFT);
-            drawString(400, 15, convert_unix_time(weatherYandex.now), LEFT);
+            drawString(400, 15, convert_unix_time(weatherObj.now), LEFT);
             draw_battery(680, 30);
 
             this->edp_update();
@@ -253,10 +253,10 @@ class WeatherViewAppLayout {
 
         void display_fact_weather()
         {
-            this->draw_conditions_section(20, 50, weatherYandex.fact.icon, 0, LargeIcon);
-            draw_wind_section(830, 200, weatherYandex.fact.wind_dir, weatherYandex.fact.wind_speed, weatherYandex.fact.wind_gust, 100, true);
+            this->draw_conditions_section(20, 50, weatherObj.fact.icon, 0, LargeIcon);
+            draw_wind_section(830, 200, weatherObj.fact.wind_dir, weatherObj.fact.wind_speed, weatherObj.fact.wind_gust, 100, true);
             setFont(osans18b);
-            drawString(20, 60, getSeason(weatherYandex.fact.season), LEFT);
+            drawString(20, 60, getSeason(weatherObj.fact.season), LEFT);
             draw_thp_section(480, 70);
             draw_sun_section(480, 330);
         }
@@ -265,11 +265,11 @@ class WeatherViewAppLayout {
         {
             int xOffset = 20;
             setFont(osans48b);
-            drawString(x, y, String(weatherYandex.fact.temp) + " °C", CENTER);
+            drawString(x, y, String(weatherObj.fact.temp) + " °C", CENTER);
             y += osans26b.advance_y + 4;
 
             setFont(osans16b);
-            drawString(x, y, String(weatherYandex.fact.feels_like) + " °C", CENTER);
+            drawString(x, y, String(weatherObj.fact.feels_like) + " °C", CENTER);
             y += osans8b.advance_y;
 
             setFont(osans8b);
@@ -277,7 +277,7 @@ class WeatherViewAppLayout {
             y += osans12b.advance_y;
 
             setFont(osans24b);
-            int sw = drawString(x - xOffset, y, String(weatherYandex.fact.humidity) + "%", RIGHT);
+            int sw = drawString(x - xOffset, y, String(weatherObj.fact.humidity) + "%", RIGHT);
 
             // uint8_t *data = load_file("blob.bin");
             // if (data != NULL)
@@ -294,7 +294,7 @@ class WeatherViewAppLayout {
             // }
 
             int ex;
-            ex = drawString(x + xOffset, y, String(weatherYandex.fact.pressure_mm), LEFT) + 5;
+            ex = drawString(x + xOffset, y, String(weatherObj.fact.pressure_mm), LEFT) + 5;
 
             setFont(osans10b);
             //drawString(x + xOffset + ex, y, "mm/Hg", LEFT);
@@ -368,13 +368,13 @@ class WeatherViewAppLayout {
 
             if (IconSize == LargeIcon)
             {
-                drawStringWithLB(x + L_SIZE / 2, y + L_SIZE + 5, get_description_condition(weatherYandex.fact.condition), osans8b, CENTER);
+                drawStringWithLB(x + L_SIZE / 2, y + L_SIZE + 5, get_description_condition(weatherObj.fact.condition), osans8b, CENTER);
             }
             else
             {
-                drawStringWithLB(x + 10, y + S_SIZE - 5, get_description_condition(weatherYandex.forecast.parts[forecast_part].condition), osans6b, LEFT);
-                uint8_t prec_prob = weatherYandex.forecast.parts[forecast_part].prec_prob;
-                drawString(x + S_SIZE / 2, y + S_SIZE + 30, String(weatherYandex.forecast.parts[forecast_part].prec_mm, 1) + "mm", CENTER);
+                drawStringWithLB(x + 10, y + S_SIZE - 5, get_description_condition(weatherObj.forecast.parts[forecast_part].condition), osans6b, LEFT);
+                uint8_t prec_prob = weatherObj.forecast.parts[forecast_part].prec_prob;
+                drawString(x + S_SIZE / 2, y + S_SIZE + 30, String(weatherObj.forecast.parts[forecast_part].prec_mm, 1) + "mm", CENTER);
                 drawString(x + S_SIZE / 2, y + S_SIZE + 45, String(prec_prob) + "%", CENTER);
             }
         }
@@ -388,12 +388,12 @@ class WeatherViewAppLayout {
             for (uint8_t i = 0; i < 2; i++)
             {
                 setFont(osans10b);
-                drawString(i * xOffSet + 10, y + 5, get_partName(weatherYandex.forecast.parts[i].part_name), LEFT);
-                draw_conditions_section(i * xOffSet + 10, y + 20, weatherYandex.forecast.parts[i].icon, i, SmallIcon);
+                drawString(i * xOffSet + 10, y + 5, get_partName(weatherObj.forecast.parts[i].part_name), LEFT);
+                draw_conditions_section(i * xOffSet + 10, y + 20, weatherObj.forecast.parts[i].icon, i, SmallIcon);
                 draw_wind_section((i * xOffSet) + (i + xOffSet - 90), y + 90,
-                                weatherYandex.forecast.parts[i].wind_dir,
-                                weatherYandex.forecast.parts[i].wind_speed,
-                                weatherYandex.forecast.parts[i].wind_gust,
+                                weatherObj.forecast.parts[i].wind_dir,
+                                weatherObj.forecast.parts[i].wind_speed,
+                                weatherObj.forecast.parts[i].wind_gust,
                                 60, false);
                 draw_thp_forecast_section(i * xOffSet + 210, y + 30, i);
             }
@@ -590,23 +590,23 @@ class WeatherViewAppLayout {
                 free(data);
             }
             setFont(osans10b);
-            drawString(x - r - 20, y - 35, weatherYandex.forecast.sunrise, RIGHT);
-            drawString(x + r + 20, y - 35, weatherYandex.forecast.sunset, LEFT);
+            drawString(x - r - 20, y - 35, weatherObj.forecast.sunrise, RIGHT);
+            drawString(x + r + 20, y - 35, weatherObj.forecast.sunset, LEFT);
         }
 
         void draw_thp_forecast_section(uint16_t x, uint16_t y, uint8_t part)
         {
             setFont(osans24b);
-            drawString(x, y, String(weatherYandex.forecast.parts[part].temp_avg) + " °C", CENTER);
+            drawString(x, y, String(weatherObj.forecast.parts[part].temp_avg) + " °C", CENTER);
 
             setFont(osans18b);
-            drawString(x, y + 45, String(weatherYandex.forecast.parts[part].feels_like) + " °C", CENTER);
+            drawString(x, y + 45, String(weatherObj.forecast.parts[part].feels_like) + " °C", CENTER);
 
             setFont(osans6b);
             drawString(x, y + 73, "(ощущается)", CENTER);
 
             setFont(osans10b);
-            drawString(x, y + 95, String(weatherYandex.forecast.parts[part].pressure_mm), CENTER);
+            drawString(x, y + 95, String(weatherObj.forecast.parts[part].pressure_mm), CENTER);
 
             setFont(osans6b);
             drawString(x, y + 110, "mm/Hg", CENTER);
